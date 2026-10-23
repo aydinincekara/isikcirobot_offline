@@ -9,8 +9,11 @@ Hem öğretmen hem öğrenci bilgisayarında aynı dosya çalıştırılır; kur
 ÖĞRETMEN BİLGİSAYARI
 1. Kurulum dosyasını açın, "Tüm kullanıcılar için" seçin (yönetici izni; güvenlik duvarı izni kurulumda verilir).
 2. Lisansı kabul edin, kurulum türünde "Öğretmen bilgisayarı (sunucu)" seçin.
-3. Sunucu adı, port (8000) ve kayıt klasörünü kontrol edip kurun. Bitince öğretmen paneli açılır;
-   ilk açılışta admin hesabını oluşturun. Sonraki derslerde masaüstündeki "afi sınıf sunucusu" simgesi.
+3. Klasörü (C:\afikod), sunucu adını, portu (8000) ve kayıt klasörünü kontrol edip kurun. Bitince
+   öğretmen paneli açılır; ilk açılışta admin hesabını oluşturun.
+4. Sunucu penceresiz çalışır: saatin yanındaki afi simgesi (görünmüyorsa ^ okunun içinde) panelini açar,
+   sağ tıkla "Sunucuyu kapat". Panelde "AFİ KOD'u aç" uygulamayı öğretmen olarak açar.
+   Sunucu bilgileri: panel > Ayarlar. Kayıtlar: C:\afikod\kayitlar\sunucu
 
 ÖĞRENCİ BİLGİSAYARI
 1. Aynı kurulum dosyasını açın, "Öğrenci bilgisayarı (istemci)" seçin. Sunucu adresi boş kalabilir.

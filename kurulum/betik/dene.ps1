@@ -50,6 +50,9 @@ try { Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8125/api/v1/sunucu/k
 $kapandi = $p.WaitForExit(15000)
 Kontrol $kapandi "panelden 'Sunucuyu kapat' programı kapattı"
 Get-Process afi-sunucu -ErrorAction SilentlyContinue | Stop-Process -Force
+$g = Get-Content "$veri\gunluk.txt" -Raw -Encoding UTF8
+Kontrol ($g -and -not ($g -match "simgesi açılamadı")) "görev çubuğu simgesi açıldı (günlükte hata yok)"
+Kontrol ($g -match "port 8125 \(simge\)") "sunucu penceresiz (simge) modda başladı"
 
 # ---------------------------------------------------------------- 2) aynı bilgisayarı öğrenciye çevir (rol değiştirme)
 Kur @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/ALLUSERS", "/ROL=istemci", "/SUNUCU=127.0.0.1:8125", "/BASLANGIC=1")

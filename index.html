@@ -89,9 +89,11 @@ footer{color:var(--ink-3);font-size:.88rem;margin-top:30px}
       <li>İlk soruda <b>Tüm kullanıcılar için</b> seçin (yönetici izni ister). Böylece güvenlik duvarı izni kurulumda verilir, Windows sonradan sormaz.</li>
       <li>Lisans sözleşmesini okuyup kabul edin.</li>
       <li>Kurulum türünde <b>Öğretmen bilgisayarı (sunucu)</b> seçin. Sunucunun adını, portu (8000) ve öğrenci kayıtlarının tutulacağı klasörü kontrol edin.</li>
-      <li>Kurulum klasörünü onaylayıp <b>Kur</b>'a basın. Bitince sunucu açılır ve öğretmen paneli tarayıcıda görünür. İlk açılışta <b>admin hesabını</b> oluşturun.</li>
+      <li>Kurulum klasörünü onaylayıp (<code>C:\afikod</code>) <b>Kur</b>'a basın. Bitince sunucu açılır ve öğretmen paneli tarayıcıda görünür. İlk açılışta <b>admin hesabını</b> oluşturun.</li>
     </ol>
-    <p>Sonraki derslerde masaüstündeki <b>afi sınıf sunucusu</b> simgesiyle açılır. Siyah pencere ders boyunca açık kalmalı; kapatınca sunucu durur.</p>
+    <p>Sunucu <b>penceresiz</b>, arka planda çalışır. Görev çubuğunda saatin yanındaki <b>afi simgesine</b> tıklayınca panel açılır; sağ tıkla AFİ KOD'u öğretmen olarak açabilir ya da sunucuyu kapatabilirsiniz. Simge görünmüyorsa saatin yanındaki <b>^</b> okuna bakın; oradan görev çubuğuna sürükleyerek sabitleyebilirsiniz. Sonraki derslerde masaüstündeki <b>afi sınıf sunucusu</b> simgesiyle açılır.</p>
+    <p>Panelde üstteki <b>▶ AFİ KOD'u aç</b> düğmesi uygulamayı öğretmen olarak açar ("Çözümü yükle" görünür). Sunucunun bilgileri (adresler, kayıt klasörü, son olaylar) <b>Ayarlar</b> sekmesindedir.</p>
+    <p><small>Her şey tek klasörde: <code>C:\afikod</code> program, <code>C:\afikod\kayitlar\sunucu</code> öğrenci kayıtları (yedek için bu klasörü kopyalayın).</small></p>
     <div class="not">Okul ağı Windows'ta <b>Ortak ağ</b> görünse de öğrencilerin bağlanabilmesi için kurulumdaki <i>"Okul ağı Ortak ağ görünse de izin ver"</i> kutusu işaretli kalsın.</div>
   </section>
 
@@ -101,7 +103,7 @@ footer{color:var(--ink-3);font-size:.88rem;margin-top:30px}
     <ol>
       <li>Aynı <b>afi-sinif-kurulum.exe</b> dosyasını (USB'den) her öğrenci bilgisayarında açın. Bilgisayardaki herkes kullanacaksa <b>Tüm kullanıcılar için</b>, yönetici parolanız yoksa <b>Yalnızca benim için</b> seçin.</li>
       <li>Kurulum türünde <b>Öğrenci bilgisayarı (istemci)</b> seçin. Öğretmen sunucusunun adresini boş bırakabilirsiniz; program sunucuyu ağda kendisi bulur.</li>
-      <li>Masaüstüne <b>AFİ KOD</b> simgesi gelir; program Windows açılışında arka planda başlar.</li>
+      <li>Masaüstüne <b>AFİ KOD</b> simgesi gelir; program Windows açılışında arka planda başlar. Kayıtlar <code>C:\afikod\kayitlar\istemci\&lt;Windows kullanıcısı&gt;</code> içinde tutulur.</li>
     </ol>
     <div class="ok">Ağ koparsa ya da öğretmen bilgisayarı kapalıysa öğrenci çalışmaya devam eder; kayıtlar bekletilir ve bağlantı gelince gönderilir. Yeni AFİ KOD sürümleri öğretmen sunucusundan kendiliğinden gelir.</div>
     <h3>Çok bilgisayara tek komutla (sessiz kurulum)</h3>
