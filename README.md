@@ -25,8 +25,7 @@
 3. `paketler/`, `version.json` ve `afi_sinif/paketler/` değişikliklerini gönderin. Sunucular "Güncellemeleri denetle" deyince yeni sürümü görür.
 
 ## exe üretmek
-GitHub → Actions → **Windows programlari** → Run workflow (dosyalar "Artifacts" altında çıkar) ya da etiket gönderin:
-`git tag v1.0.1` ve `git push --tags` → Releases sayfasına konur, indirme sayfasındaki düğmeler en yeni sürümü verir.
+Program kodu (`afi_sinif/`) main dalına gönderilince GitHub exe'leri kendisi üretir, test eder ve Releases sayfasına koyar (sürüm adı `afi_sinif/ortak.py` içindeki `PLATFORM_SURUM`; yeni sürüm için bu sayıyı artırın). Elle başlatmak: GitHub → Actions → **Windows programlari** → Run workflow. İndirme sayfasındaki düğmeler hep en yeni sürümü verir.
 
 ## Başka dersler
 Her ders bir uygulama paketidir: zip içinde `afi-paket.json` (`{"uygulama": "...", "ad": "...", "surum": "...", "giris": "index.html"}`) ve uygulama dosyaları. Uygulama, sınıf modunu `/api/v1/` uçlarıyla kullanır (AFİ KOD'daki `js/sinif.js` örnektir).

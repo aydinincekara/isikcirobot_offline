@@ -1,12 +1,20 @@
 # Windows programlarını (afi-sunucu.exe, afi-istemci.exe) GitHub'ın kendi bilgisayarlarında üretir.
 # Çalıştırmak için: GitHub > Actions > "Windows programlari" > Run workflow
-# ya da bir sürüm etiketi gönderin (örnek: git tag v1.0.0 && git push --tags) -> Releases sayfasına da konur.
+# Ayrıca main dalında program kodu değişince kendiliğinden çalışır ve exe'leri Releases sayfasına koyar
+# (sürüm adı afi_sinif/ortak.py içindeki PLATFORM_SURUM'dan alınır, ör. v1.0.0).
 name: Windows programlari
 
 on:
   workflow_dispatch:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths:
+      - "afi_sinif/**"
+      - "afi-sunucu.py"
+      - "afi-istemci.py"
+      - "tests/**"
+      - "tools/ikon/**"
+      - ".github/workflows/exe.yml"
 
 permissions:
   contents: write
@@ -52,10 +60,20 @@ jobs:
         with:
           name: afi-sinif-windows
           path: dist/*.exe
+      - name: Surum numarasi
+        id: surum
+        shell: pwsh
+        run: |
+          $s = python -c "from afi_sinif import ortak; print(ortak.PLATFORM_SURUM)"
+          "etiket=v$s" >> $env:GITHUB_OUTPUT
       - name: Surum sayfasi
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.surum.outputs.etiket }}
+          name: afi sınıf ${{ steps.surum.outputs.etiket }}
+          target_commitish: ${{ github.sha }}
+          body: "Öğretmen bilgisayarı: afi-sunucu.exe · Öğrenci bilgisayarı: afi-istemci.exe · Kurulum: https://aydinincekara.github.io/isikcirobot_offline/"
           files: |
             dist/afi-sunucu.exe
             dist/afi-istemci.exe
