@@ -42,8 +42,18 @@ Cek "10-bakim"; Tus "{ENTER}"
 Cek "11-kurulum-turu-ogrenci"; Tus "{ENTER}"
 Cek "12-ogrenci-ayarlari"; Tus "{ENTER}"
 Cek "13-klasor"; Tus "{ENTER}"
-Cek "14-hazir-ogrenci"
+Cek "14-hazir-ogrenci"; Tus "{ENTER}" 1800
+Cek "15-kuruluyor-ogrenci"; Start-Sleep -Seconds 6
+Cek "16-bitti-ogrenci"; Tus "{ENTER}" 2000
 Kapat
-Start-Sleep -Seconds 2
-if (Test-Path "C:\afi-ekran\unins000.exe") { Start-Process "C:\afi-ekran\unins000.exe" -ArgumentList "/VERYSILENT" -Wait }
+Get-Process afi-istemci -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# 3) kaldırma soruları
+if (Test-Path "C:\afi-ekran\unins000.exe") {
+  Start-Process "C:\afi-ekran\unins000.exe"
+  Start-Sleep -Seconds 4; Odak; Start-Sleep -Milliseconds 600
+  Cek "17-kaldir-onay"; Tus "{ENTER}" 5000
+  Cek "18-kayitlar-silinsin-mi"; Tus "{ENTER}" 3000
+  Cek "19-kaldirildi"; Tus "{ENTER}" 1500
+}
 Get-ChildItem $out

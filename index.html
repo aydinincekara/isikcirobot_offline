@@ -23,6 +23,9 @@ h1{font-size:1.6rem;margin:18px 0 6px;line-height:1.25} h2{font-size:1.25rem;mar
 .giris{color:var(--ink-2);max-width:720px;margin:0 0 20px}
 .kart{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin:14px 0;min-width:0}
 .izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.buyuk-indir{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:2px solid var(--accent);border-radius:16px;padding:16px;background:var(--accent-soft)}
+.buyuk-indir img{width:64px;height:64px}.buyuk-indir div{flex:1 1 260px;display:flex;flex-direction:column;gap:2px}.buyuk-indir b{font-size:1.1rem}.buyuk-indir small{color:var(--ink-3)}
+.buyuk-indir .dugme{margin-top:0;font-size:1.05rem;padding:12px 18px}
 .indir{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--panel)}
 .indir img{width:48px;height:48px}
 .indir b{font-size:1.08rem}
@@ -47,18 +50,21 @@ footer{color:var(--ink-3);font-size:.88rem;margin-top:30px}
 <main>
   <header><span class="logo" aria-label="AFİ">AF<span class="i"><span class="nokta"></span></span></span><span class="etiket">SINIF</span></header>
   <h1>AFİ KOD sınıf sürümü</h1>
-  <p class="giris">Öğretmen bilgisayarında küçük bir sunucu çalışır; öğretmen öğrencileri canlı izler, mesaj gönderir, güncellemeleri tek tuşla yapar. Öğrenci bilgisayarlarına kurulan istemci ağ olsa da olmasa da çalışır, öğretmen sunucusunu kendisi bulur. Python kurmak gerekmez.</p>
+  <p class="giris">Öğretmen bilgisayarında küçük bir sunucu çalışır; öğretmen öğrencileri canlı izler, mesaj gönderir, güncellemeleri tek tuşla yapar. Öğrenci bilgisayarlarına kurulan istemci ağ olsa da olmasa da çalışır, öğretmen sunucusunu kendisi bulur. Tek kurulum dosyası; Python kurmak gerekmez.</p>
   <div class="surumler" id="surumler"></div>
 
   <section class="kart">
     <h2>İndir</h2>
-    <div class="izgara">
-      <div class="indir"><img src="tools/ikon/afi-sunucu.png" alt=""><b>afi-sunucu.exe</b><span>Öğretmen bilgisayarı için. Panel, canlı takip, güncelleme.</span><small>Windows 8.1, 10, 11 · kurulum yok, çift tıkla çalışır</small>
-        <a class="dugme" href="https://github.com/aydinincekara/isikcirobot_offline/releases/latest/download/afi-sunucu.exe">⬇ Öğretmen programı</a></div>
-      <div class="indir"><img src="tools/ikon/afi-istemci.png" alt=""><b>afi-istemci.exe</b><span>Öğrenci bilgisayarları için. Ağ yokken de çalışır.</span><small>Yönetici izni istemez · ilk açılışta kendini kurar</small>
-        <a class="dugme" href="https://github.com/aydinincekara/isikcirobot_offline/releases/latest/download/afi-istemci.exe">⬇ Öğrenci programı</a></div>
-      <div class="indir"><img src="tools/ikon/afi-istemci.png" alt="" style="filter:grayscale(1)"><b>Güncelleme paketi</b><span>İnterneti olmayan sunucuya USB ile güncelleme getirmek için.</span><small id="paketBilgi">afi-kod paketi (.zip)</small>
+    <div class="buyuk-indir">
+      <img src="tools/ikon/afi-istemci.png" alt="">
+      <div><b>afi-sinif-kurulum.exe</b><span>Tek kurulum dosyası. Kurarken seçersiniz: <b>Öğretmen bilgisayarı</b> ya da <b>Öğrenci bilgisayarı</b>.</span><small>Windows 8.1, 10, 11 (64 bit) · Python gerekmez</small></div>
+      <a class="dugme" href="https://github.com/aydinincekara/isikcirobot_offline/releases/latest/download/afi-sinif-kurulum.exe">⬇ Kurulum dosyasını indir</a>
+    </div>
+    <div class="izgara" style="margin-top:12px">
+      <div class="indir"><b>Güncelleme paketi</b><span>İnterneti olmayan öğretmen bilgisayarına AFİ KOD güncellemesini USB ile getirmek için.</span><small id="paketBilgi">afi-kod paketi (.zip)</small>
         <a class="dugme ince" id="paketLink" href="version.json">⬇ Paket</a></div>
+      <div class="indir"><b>Kurulum ekranları</b><span>Kurulum sihirbazı adım adım nasıl görünür?</span><small>lisans · tür seçimi · ayarlar · ilerleme</small>
+        <a class="dugme ince" href="https://github.com/aydinincekara/isikcirobot_offline/tree/ekranlar/ekranlar">Ekranlara bak</a></div>
     </div>
     <p><small>Tüm sürümler: <a href="https://github.com/aydinincekara/isikcirobot_offline/releases">Sürümler sayfası</a> · Kaynak kod: <a href="https://github.com/aydinincekara/isikcirobot_offline">GitHub</a> · Uygulamanın internetteki hali: <a href="https://aydinincekara.github.io/isikcirobot_v1/">isikcirobot_v1</a></small></p>
   </section>
@@ -79,24 +85,29 @@ footer{color:var(--ink-3);font-size:.88rem;margin-top:30px}
   <section class="kart">
     <h2>1. Öğretmen bilgisayarı</h2>
     <ol>
-      <li><b>afi-sunucu.exe</b> dosyasını kalıcı bir klasöre koyun, örneğin <code>C:\afi-sinif</code>. Veriler yanında açılan <code>afi-sunucu-veri</code> klasöründe tutulur (yedek için bu klasörü kopyalamak yeter).</li>
-      <li>Çift tıklayın. Windows <i>"Bilgisayarınız korundu"</i> derse <b>Ek bilgi → Yine de çalıştır</b>.</li>
-      <li>Güvenlik duvarı sorarsa <b>Özel ağlar</b> işaretliyken <b>Erişime izin ver</b> deyin. Bu adım bir kez yönetici parolası isteyebilir; sonra gerekmez.</li>
-      <li>Siyah pencerede öğrencilerin açacağı adresler yazar ve panel tarayıcıda açılır. İlk açılışta <b>admin hesabını</b> oluşturun.</li>
-      <li>Ders boyunca siyah pencere açık kalsın; kapatınca sunucu durur.</li>
+      <li><b>afi-sinif-kurulum.exe</b> dosyasına çift tıklayın. Windows <i>"Bilgisayarınız korundu"</i> derse <b>Ek bilgi → Yine de çalıştır</b>.</li>
+      <li>İlk soruda <b>Tüm kullanıcılar için</b> seçin (yönetici izni ister). Böylece güvenlik duvarı izni kurulumda verilir, Windows sonradan sormaz.</li>
+      <li>Lisans sözleşmesini okuyup kabul edin.</li>
+      <li>Kurulum türünde <b>Öğretmen bilgisayarı (sunucu)</b> seçin. Sunucunun adını, portu (8000) ve öğrenci kayıtlarının tutulacağı klasörü kontrol edin.</li>
+      <li>Kurulum klasörünü onaylayıp <b>Kur</b>'a basın. Bitince sunucu açılır ve öğretmen paneli tarayıcıda görünür. İlk açılışta <b>admin hesabını</b> oluşturun.</li>
     </ol>
-    <div class="not">Okul ağı Windows'ta <b>Ortak ağ</b> olarak görünüyorsa öğrenciler bağlanamayabilir: Ayarlar → Ağ ve İnternet → bağlı ağ → <b>Özel</b> seçin.</div>
+    <p>Sonraki derslerde masaüstündeki <b>afi sınıf sunucusu</b> simgesiyle açılır. Siyah pencere ders boyunca açık kalmalı; kapatınca sunucu durur.</p>
+    <div class="not">Okul ağı Windows'ta <b>Ortak ağ</b> görünse de öğrencilerin bağlanabilmesi için kurulumdaki <i>"Okul ağı Ortak ağ görünse de izin ver"</i> kutusu işaretli kalsın.</div>
   </section>
 
   <section class="kart">
     <h2>2. Öğrenci bilgisayarları</h2>
-    <h3>Önerilen: istemciyi kurmak</h3>
+    <h3>Önerilen: kurulum</h3>
     <ol>
-      <li><b>afi-istemci.exe</b> dosyasını USB'den her öğrenci bilgisayarında <b>bir kez</b> çift tıklayın (yönetici izni gerekmez).</li>
-      <li>Program kendini kurar, masaüstüne <b>AFİ KOD</b> kısayolu koyar ve Windows açılışında arka planda başlar. AFİ KOD tarayıcıda açılır.</li>
-      <li>Öğretmen sunucusunu kendisi bulur (son adres → bilgisayar adı → ağ taraması). Bulamazsa üst şeritteki <b>Sınıf bağlantısı yok</b> etiketine tıklayıp adresi elle yazın, örneğin <code>192.168.1.20:8000</code>.</li>
+      <li>Aynı <b>afi-sinif-kurulum.exe</b> dosyasını (USB'den) her öğrenci bilgisayarında açın. Bilgisayardaki herkes kullanacaksa <b>Tüm kullanıcılar için</b>, yönetici parolanız yoksa <b>Yalnızca benim için</b> seçin.</li>
+      <li>Kurulum türünde <b>Öğrenci bilgisayarı (istemci)</b> seçin. Öğretmen sunucusunun adresini boş bırakabilirsiniz; program sunucuyu ağda kendisi bulur.</li>
+      <li>Masaüstüne <b>AFİ KOD</b> simgesi gelir; program Windows açılışında arka planda başlar.</li>
     </ol>
-    <div class="ok">Ağ koparsa ya da öğretmen bilgisayarı kapalıysa öğrenci çalışmaya devam eder; kayıtlar bekletilir ve bağlantı gelince gönderilir. Yeni AFİ KOD sürümleri sunucudan kendiliğinden gelir.</div>
+    <div class="ok">Ağ koparsa ya da öğretmen bilgisayarı kapalıysa öğrenci çalışmaya devam eder; kayıtlar bekletilir ve bağlantı gelince gönderilir. Yeni AFİ KOD sürümleri öğretmen sunucusundan kendiliğinden gelir.</div>
+    <h3>Çok bilgisayara tek komutla (sessiz kurulum)</h3>
+    <p>Yönetici olarak açılmış <b>Komut İstemi</b>'nde (Başlat'a <code>cmd</code> yazın, sağ tık → Yönetici olarak çalıştır), kurulum dosyasının bulunduğu klasörde tek satır yazın; pencere açılmadan kurulur:</p>
+    <p><code>afi-sinif-kurulum.exe /VERYSILENT /ALLUSERS /ROL=istemci</code></p>
+    <p><small>Sunucu adresini de vermek için sona <code>/SUNUCU=192.168.1.20:8000</code> ekleyin. Öğretmen bilgisayarı için: <code>/ROL=sunucu /PORT=8000</code>.</small></p>
     <h3>Kurulumsuz: tarayıcıdan</h3>
     <p>Öğrenci tarayıcıda <code>http://ÖĞRETMEN-PC:8000</code> adresini açar (<code>ÖĞRETMEN-PC</code> yerine öğretmen bilgisayarının adı ya da siyah pencerede yazan IP adresi). Bu yolda ağ koparsa açık sayfa çalışır ama yeniden açılamaz.</p>
     <div class="not">Windows <b>Mobil etkin nokta</b> (192.168.137.x) en fazla 8 cihaz bağlar. Kalabalık sınıfta okulun ağını ya da ayrı bir Wi-Fi modem kullanın.</div>
@@ -106,7 +117,8 @@ footer{color:var(--ink-3);font-size:.88rem;margin-top:30px}
     <h2>Sık sorulanlar</h2>
     <details><summary>Öğretmen bilgisayarının IP adresi değişirse?</summary><p>İstemci sunucuyu bilgisayar adından ve ağ taramasıyla yeniden bulur. Tarayıcıdan bağlananlar için siyah pencerenin en altında bilgisayar adıyla yazılan adres değişmez.</p></details>
     <details><summary>8000 portu kullanımda diyor.</summary><p>Sunucu zaten açık olabilir. Başka port için Komut İstemi'nde (yönetici gerekmez) program klasöründe: <code>afi-sunucu.exe --port 8001</code></p></details>
-    <details><summary>İstemciyi kaldırmak</summary><p>Masaüstündeki <b>AFİ KOD</b> kısayolunu ve Başlangıç klasöründeki (<kbd>Win</kbd>+<kbd>R</kbd> → <code>shell:startup</code>) <b>afi istemci</b> kısayolunu silin, bilgisayarı yeniden başlatın, sonra <code>%LOCALAPPDATA%\afi-sinif</code> klasörünü silin.</p></details>
+    <details><summary>Ayarları değiştirmek, türü değiştirmek, kaldırmak</summary><p>Kurulum dosyasını yeniden açın: <i>"afi sınıf bu bilgisayarda kurulu"</i> sayfasında <b>Güncelle ya da ayarları / kurulum türünü değiştir</b> ya da <b>Kaldır</b> seçin. Kaldırmak için Denetim Masası → Programlar da kullanılabilir. Öğrenci kayıtları ayrıca sorulmadan silinmez.</p></details>
+    <details><summary>Yeni sürüm çıkınca</summary><p>AFİ KOD içeriği öğretmen panelindeki <b>Güncellemeleri denetle</b> ile gelir; öğrenci bilgisayarları yeni içeriği sunucudan kendileri alır. Programın kendisi (afi sınıf) için yeni kurulum dosyasını aynı şekilde çalıştırın; ayarlar ve kayıtlar korunur.</p></details>
     <details><summary>Python ile çalıştırmak (exe yerine)</summary><p>Python 3.8 veya yenisi gerekir. Kaynak kodu <a href="https://github.com/aydinincekara/isikcirobot_offline/archive/refs/heads/main.zip">zip olarak indirip</a> ayıklayın. Klasörde Komut İstemi açıp komutları <b>teker teker</b> yazın: <code>python --version</code> (sürümü gösterir; görünmezse <code>py --version</code> deneyin), ardından öğretmen bilgisayarında <code>python afi-sunucu.py</code>, öğrenci bilgisayarında <code>python afi-istemci.py</code>. Yönetici izni gerekmez.</p></details>
     <details><summary>Başka dersler için de kullanılabilir mi?</summary><p>Evet. Sunucu ve istemci "uygulama paketi" mantığıyla çalışır: her ders ayrı bir paket (zip + <code>afi-paket.json</code>) olarak eklenir ve aynı panelden izlenir.</p></details>
   </section>

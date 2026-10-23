@@ -2,18 +2,31 @@ afi sınıf - AFİ KOD sınıf sürümü
 ================================
 İndirme ve kurulum: https://aydinincekara.github.io/isikcirobot_offline/
 
+TEK KURULUM DOSYASI: afi-sinif-kurulum.exe
+Hem öğretmen hem öğrenci bilgisayarında aynı dosya çalıştırılır; kurulum türü sihirbazda seçilir.
+"Bilgisayarınız korundu" çıkarsa: Ek bilgi > Yine de çalıştır.
+
 ÖĞRETMEN BİLGİSAYARI
-1. afi-sunucu.exe dosyasını kalıcı bir klasöre koyun (ör. C:\afi-sinif).
-2. Çift tıklayın. "Bilgisayarınız korundu" çıkarsa: Ek bilgi > Yine de çalıştır.
-3. Güvenlik duvarı sorarsa "Özel ağlar" işaretliyken "Erişime izin ver" (bir kez yönetici izni ister).
-4. Panel tarayıcıda açılır; ilk açılışta admin hesabını oluşturun. Siyah pencere ders boyunca açık kalmalı.
-Veriler programın yanındaki afi-sunucu-veri klasöründedir; yedek için bu klasörü kopyalayın.
+1. Kurulum dosyasını açın, "Tüm kullanıcılar için" seçin (yönetici izni; güvenlik duvarı izni kurulumda verilir).
+2. Lisansı kabul edin, kurulum türünde "Öğretmen bilgisayarı (sunucu)" seçin.
+3. Sunucu adı, port (8000) ve kayıt klasörünü kontrol edip kurun. Bitince öğretmen paneli açılır;
+   ilk açılışta admin hesabını oluşturun. Sonraki derslerde masaüstündeki "afi sınıf sunucusu" simgesi.
 
 ÖĞRENCİ BİLGİSAYARI
-- Önerilen: afi-istemci.exe bir kez çift tıklanır (yönetici izni gerekmez). Kendini kurar, masaüstüne
-  "AFİ KOD" kısayolu koyar, Windows açılışında arka planda başlar. Ağ yokken de çalışır; sunucuyu kendisi bulur.
-  Bulamazsa üst şeritteki "Sınıf bağlantısı yok" etiketine tıklayıp sunucu adresini yazın (ör. 192.168.1.20:8000).
-- Kurulumsuz: tarayıcıda http://ÖĞRETMEN-PC:8000 açılır (siyah pencerede yazan adres).
+1. Aynı kurulum dosyasını açın, "Öğrenci bilgisayarı (istemci)" seçin. Sunucu adresi boş kalabilir.
+2. Masaüstüne "AFİ KOD" simgesi gelir; program Windows açılışında arka planda başlar.
+   Ağ yokken de çalışır; sunucuyu kendisi bulur. Bulamazsa üstteki "Sınıf bağlantısı yok" etiketine
+   tıklayıp adresi yazın (ör. 192.168.1.20:8000).
+- Kurulumsuz: tarayıcıda http://ÖĞRETMEN-PC:8000 açılır.
+
+TOPLU (SESSİZ) KURULUM
+Yönetici Komut İstemi'nde, kurulum dosyasının klasöründe tek satır:
+  afi-sinif-kurulum.exe /VERYSILENT /ALLUSERS /ROL=istemci
+  (öğretmen için: /ROL=sunucu /PORT=8000)
+
+AYAR DEĞİŞTİRME / KALDIRMA
+Kurulum dosyasını yeniden açın: "Güncelle ya da ayarları değiştir" ya da "Kaldır".
+Denetim Masası > Programlar'dan da kaldırılabilir. Öğrenci kayıtları sorulmadan silinmez.
 
 NOT: Windows Mobil etkin nokta en fazla 8 cihaz bağlar; kalabalık sınıfta okul ağı ya da ayrı modem kullanın.
 

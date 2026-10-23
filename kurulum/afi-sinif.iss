@@ -62,7 +62,7 @@ tr.WelcomeLabel2=Bu sihirbaz afi sınıf {#Surum} sürümünü kuracak.%n%nAynı
 tr.FinishedHeadingLabel=afi hazır!
 tr.ClickFinish=Kurulumu kapatmak için Bitir düğmesine basın.
 tr.SelectDirLabel3=afi sınıf şu klasöre kurulacak.
-tr.SelectDirBrowseLabel=Devam etmek için İleri'ye basın. Başka bir klasör seçmek için Gözat'a basın.
+tr.SelectDirBrowseLabel=Devam etmek için Sonraki düğmesine basın. Başka bir klasör seçmek için Gözat'a basın.
 tr.ReadyLabel1=afi sınıf kurulmaya hazır.
 tr.ReadyLabel2a=Seçimlerinizi aşağıda kontrol edin. Değiştirmek için Geri, kurmak için Kur düğmesine basın.
 tr.InstallingLabel=afi sınıf bilgisayarınıza kuruluyor, lütfen bekleyin.
@@ -333,8 +333,8 @@ begin
     CbDuvar.Checked := False; CbDuvar.Enabled := False; CbOrtak.Checked := False; CbOrtak.Enabled := False;
     CbDuvar.Caption := 'Güvenlik duvarı izni (yönetici kurulumu gerekir; Windows ilk açılışta soracak)';
   end;
-  CbSMasa := Kutu(SunucuSayfa, 'Masaüstüne "afi sınıf sunucusu" kısayolu koy', Y + ScaleY(40), ParamAcik('MASAUSTU', GetPreviousData('Masaustu', '1') = '1'));
-  CbSBas := Kutu(SunucuSayfa, 'Windows açılınca sunucuyu kendiliğinden başlat', Y + ScaleY(60), ParamAcik('BASLANGIC', GetPreviousData('Baslangic', '0') = '1'));
+  CbSMasa := Kutu(SunucuSayfa, 'Masaüstüne "afi sınıf sunucusu" kısayolu koy', Y + ScaleY(40), ParamAcik('MASAUSTU', GetPreviousData('SMasaustu', '1') = '1'));
+  CbSBas := Kutu(SunucuSayfa, 'Windows açılınca sunucuyu kendiliğinden başlat', Y + ScaleY(60), ParamAcik('BASLANGIC', GetPreviousData('SBaslangic', '0') = '1'));
 end;
 
 procedure IstemciSayfasiniYap;
@@ -346,8 +346,8 @@ begin
   T := Yazi(IstemciSayfa, 'Boş bırakırsanız sunucuyu ağda kendisi bulur. Örnek: 192.168.1.20:8000 ya da OGRETMEN-PC', 0, EdAdres.Top + EdAdres.Height + ScaleY(4), False);
   T.Font.Color := $707070;
   Y := T.Top + T.Height + ScaleY(14);
-  CbIBas := Kutu(IstemciSayfa, 'Windows açılınca arka planda başlat (önerilir)', Y, ParamAcik('BASLANGIC', GetPreviousData('Baslangic', '1') = '1'));
-  CbIMasa := Kutu(IstemciSayfa, 'Masaüstüne "AFİ KOD" kısayolu koy', Y + ScaleY(20), ParamAcik('MASAUSTU', GetPreviousData('Masaustu', '1') = '1'));
+  CbIBas := Kutu(IstemciSayfa, 'Windows açılınca arka planda başlat (önerilir)', Y, ParamAcik('BASLANGIC', GetPreviousData('IBaslangic', '1') = '1'));
+  CbIMasa := Kutu(IstemciSayfa, 'Masaüstüne "AFİ KOD" kısayolu koy', Y + ScaleY(20), ParamAcik('MASAUSTU', GetPreviousData('IMasaustu', '1') = '1'));
   T := Yazi(IstemciSayfa, 'Öğrenci kayıtları her Windows kullanıcısının kendi klasöründe tutulur (%LOCALAPPDATA%\afi-sinif). Bağlantı yokken biriken kayıtlar, sunucu bulununca gönderilir.', 0, Y + ScaleY(52), False);
   T.Font.Color := $707070;
 end;
@@ -424,6 +424,8 @@ begin
         'AFİ KOD bu bilgisayara kuruldu.' + #13#10#13#10 +
         'Masaüstündeki "AFİ KOD" simgesiyle açılır. Öğretmen sunucusu ağdaysa kendiliğinden bağlanır; değilse kayıtlar bu bilgisayarda saklanır.' + #13#10#13#10 +
         'Bağlantı ayarları: AFİ KOD''da üstteki "Sınıf" etiketine tıklayın.';
+    WizardForm.AdjustLabelHeight(WizardForm.FinishedLabel);
+    WizardForm.RunList.Top := WizardForm.FinishedLabel.Top + WizardForm.FinishedLabel.Height + ScaleY(14);
   end;
 end;
 
@@ -506,8 +508,10 @@ begin
   SetPreviousData(PreviousDataKey, 'Veri', Trim(EdVeri.Text));
   SetPreviousData(PreviousDataKey, 'Sunucu', Trim(EdAdres.Text));
   if CbOrtak.Checked then SetPreviousData(PreviousDataKey, 'Ortak', '1') else SetPreviousData(PreviousDataKey, 'Ortak', '0');
-  if SecMasaustu then SetPreviousData(PreviousDataKey, 'Masaustu', '1') else SetPreviousData(PreviousDataKey, 'Masaustu', '0');
-  if SecBaslangic then SetPreviousData(PreviousDataKey, 'Baslangic', '1') else SetPreviousData(PreviousDataKey, 'Baslangic', '0');
+  if CbSMasa.Checked then SetPreviousData(PreviousDataKey, 'SMasaustu', '1') else SetPreviousData(PreviousDataKey, 'SMasaustu', '0');
+  if CbSBas.Checked then SetPreviousData(PreviousDataKey, 'SBaslangic', '1') else SetPreviousData(PreviousDataKey, 'SBaslangic', '0');
+  if CbIMasa.Checked then SetPreviousData(PreviousDataKey, 'IMasaustu', '1') else SetPreviousData(PreviousDataKey, 'IMasaustu', '0');
+  if CbIBas.Checked then SetPreviousData(PreviousDataKey, 'IBaslangic', '1') else SetPreviousData(PreviousDataKey, 'IBaslangic', '0');
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
