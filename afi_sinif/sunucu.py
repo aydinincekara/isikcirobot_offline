@@ -677,8 +677,9 @@ def calistir(argv=None):
         except (AttributeError, ValueError):
             pass
     p = argparse.ArgumentParser(description="afi sınıf sunucusu")
-    p.add_argument("--port", type=int, default=int(os.environ.get("AFI_PORT") or ortak.VARSAYILAN_PORT))
-    p.add_argument("--veri", default=None, help="veri klasörü (varsayılan: programın yanındaki afi-sunucu-veri)")
+    kurulum = ortak.kurulum_bilgisi()
+    p.add_argument("--port", type=int, default=int(os.environ.get("AFI_PORT") or kurulum.get("port") or ortak.VARSAYILAN_PORT))
+    p.add_argument("--veri", default=None, help="veri klasörü (varsayılan: kurulumda seçilen ya da programın yanındaki afi-sunucu-veri)")
     p.add_argument("--guncelleme-adresi", default=None)
     p.add_argument("--tarayici-acma", action="store_true", help="başlarken paneli tarayıcıda açma")
     p.add_argument("--deneme", action="store_true", help="başlat, kendini dene ve kapan (kurulum testi)")
@@ -687,6 +688,10 @@ def calistir(argv=None):
         os.environ["AFI_VERI"] = args.veri
     veri = ortak.veri_klasoru("sunucu")
     app = Sunucu(veri, port=args.port, guncelleme_adresi=args.guncelleme_adresi)
+    if kurulum.get("ad") and kurulum.get("ad") != app.db.ayar("kurulum_adi"):      # kurulumda yazılan ad (yeniden kurulumda değiştiyse)
+        app.ad = str(kurulum["ad"]).strip()[:60] or app.ad
+        app.db.ayar_yaz("sunucu_adi", app.ad)
+        app.db.ayar_yaz("kurulum_adi", kurulum["ad"])
     try:
         httpd = app.baslat()
     except OSError as e:

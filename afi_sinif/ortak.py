@@ -18,7 +18,7 @@ import urllib.request
 import zipfile
 from http.server import BaseHTTPRequestHandler
 
-PLATFORM_SURUM = "1.0.0"
+PLATFORM_SURUM = "1.1.0"
 SISTEM = "afi-sinif"
 VARSAYILAN_PORT = 8000
 ISTEMCI_PORT = 8100
@@ -51,14 +51,32 @@ def kaynak_yolu(*parcalar):
     return os.path.join(taban, *parcalar)
 
 
+def kurulum_bilgisi():
+    """Kurulum sihirbazının programın yanına yazdığı kurulum.json: rol, veri klasörü, port, sunucu adresi...
+    Program kurulumsuz (USB'den, Python ile) çalışıyorsa boş döner."""
+    yol = os.path.join(program_klasoru(), "kurulum.json")
+    try:
+        with open(yol, "r", encoding="utf-8-sig") as f:      # Inno Setup UTF-8'i BOM ile yazar
+            v = json.load(f)
+        return v if isinstance(v, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
 def veri_klasoru(rol):
-    """Verilerin tutulduğu klasör. AFI_VERI ortam değişkeniyle değiştirilebilir.
-    Sunucu: programın yanındaki 'afi-sunucu-veri' klasörü (taşınabilir).
-    İstemci: Windows'ta %LOCALAPPDATA%\\afi-sinif\\veri (yönetici izni gerekmez)."""
+    """Verilerin tutulduğu klasör. Öncelik: AFI_VERI ortam değişkeni > kurulumda seçilen klasör > varsayılan.
+    Sunucu: kuruluysa %ProgramData%\\afi-sinif\\sunucu-veri, kurulumsuzsa programın yanındaki 'afi-sunucu-veri' (taşınabilir).
+    İstemci: Windows'ta %LOCALAPPDATA%\\afi-sinif\\veri (her Windows kullanıcısına ayrı; yönetici izni gerekmez)."""
     yol = os.environ.get("AFI_VERI")
+    k = kurulum_bilgisi()
+    if not yol and rol == "sunucu" and k.get("veri"):
+        yol = os.path.expandvars(str(k["veri"]))
     if not yol:
         if rol == "sunucu":
-            yol = os.path.join(program_klasoru(), "afi-sunucu-veri")
+            if k and os.environ.get("ProgramData"):
+                yol = os.path.join(os.environ["ProgramData"], "afi-sinif", "sunucu-veri")
+            else:
+                yol = os.path.join(program_klasoru(), "afi-sunucu-veri")
         else:
             taban = os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), ".local", "share")
             yol = os.path.join(taban, "afi-sinif", "veri")

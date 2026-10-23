@@ -548,7 +548,8 @@ def calistir(argv=None):
     args = p.parse_args(argv)
     if args.veri:
         os.environ["AFI_VERI"] = args.veri
-    if ortak.donduruldu() and sys.platform == "win32" and not args.kurma and not args.deneme:
+    kurulum = ortak.kurulum_bilgisi()
+    if ortak.donduruldu() and sys.platform == "win32" and not kurulum and not args.kurma and not args.deneme:   # kurulum sihirbazıyla kurulduysa kendini kopyalamaz
         hedef = kurulu_yol()
         if args.kur or os.path.normcase(os.path.abspath(sys.executable)) != os.path.normcase(hedef):
             yeni = kur()
@@ -565,6 +566,13 @@ def calistir(argv=None):
     except (OSError, ValueError):
         pass
     app = Istemci(ortak.veri_klasoru("istemci"), port=args.port)
+    k_sunucu = str(kurulum.get("sunucu") or "").strip()
+    if k_sunucu != (app.ayar.get("kurulum_sunucu") or ""):      # kurulumda yazılan adres (yeniden kurulumda değiştiyse uygula)
+        app.ayar["kurulum_sunucu"] = k_sunucu
+        app.ayar["sunucu"] = ((k_sunucu if k_sunucu.startswith("http") else "http://" + k_sunucu).rstrip("/") if k_sunucu else None)
+        if app.ayar["sunucu"] and ":" not in app.ayar["sunucu"].split("//", 1)[1]:
+            app.ayar["sunucu"] += ":%d" % ortak.VARSAYILAN_PORT
+        app.ayar_kaydet()
     if args.sunucu:
         adr = args.sunucu if args.sunucu.startswith("http") else "http://" + args.sunucu
         app.ayar["sunucu"] = adr.rstrip("/")

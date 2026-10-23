@@ -14,6 +14,7 @@ on:
       - "afi-istemci.py"
       - "tests/**"
       - "tools/ikon/**"
+      - "kurulum/**"
       - ".github/workflows/exe.yml"
 
 permissions:
@@ -68,16 +69,56 @@ jobs:
           if (-not (Dene "istemci" "dist\afi-istemci.exe" @("--deneme", "--port", "8124", "--veri", "$env:RUNNER_TEMP\istemci-veri"))) { $hata = $true }
           Get-ChildItem dist
           if ($hata) { exit 1 }
-      - uses: actions/upload-artifact@v4
-        with:
-          name: afi-sinif-windows
-          path: dist/*.exe
       - name: Surum numarasi
         id: surum
         shell: pwsh
         run: |
           $s = python -c "from afi_sinif import ortak; print(ortak.PLATFORM_SURUM)"
+          "surum=$s" >> $env:GITHUB_OUTPUT
           "etiket=v$s" >> $env:GITHUB_OUTPUT
+      - name: Kurulum dosyasi (Inno Setup)
+        shell: pwsh
+        env:
+          AFI_SURUM: ${{ steps.surum.outputs.surum }}
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          & $iscc /? | Select-Object -First 1
+          $cikti = & $iscc "kurulum\afi-sinif.iss" 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            $son = ($cikti | Select-Object -Last 25) -join " / "
+            Write-Host "::error::Inno Setup derleme hatası: $son"
+            exit 1
+          }
+          $uyari = ($cikti | Where-Object { $_ -match "Warning" }) -join " / "
+          if ($uyari) { Write-Host "::warning::Inno Setup uyarıları: $uyari" }
+          Get-Item dist\afi-sinif-kurulum.exe | Format-List Name, Length
+      - name: Kurulum denemesi (sessiz kurulum, rol degistirme, kaldirma)
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./kurulum/betik/dene.ps1
+      - name: Kurulum ekran goruntuleri
+        continue-on-error: true
+        timeout-minutes: 6
+        shell: pwsh
+        run: |
+          ./kurulum/betik/ekran.ps1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          $gecici = Join-Path $env:RUNNER_TEMP "ekranlar"
+          Copy-Item ekranlar $gecici -Recurse -Force
+          git checkout --orphan ekranlar-dal
+          git rm -r -q --cached .
+          Remove-Item ekranlar -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item $gecici ekranlar -Recurse
+          git add ekranlar
+          git commit -q -m "Kurulum ekran görüntüleri ${{ github.sha }}"
+          git push -f origin HEAD:ekranlar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: afi-sinif-windows
+          path: |
+            dist/*.exe
       - name: Surum sayfasi
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
@@ -85,7 +126,8 @@ jobs:
           tag_name: ${{ steps.surum.outputs.etiket }}
           name: afi sınıf ${{ steps.surum.outputs.etiket }}
           target_commitish: ${{ github.sha }}
-          body: "Öğretmen bilgisayarı: afi-sunucu.exe · Öğrenci bilgisayarı: afi-istemci.exe · Kurulum: https://aydinincekara.github.io/isikcirobot_offline/"
+          body: |
+            Tek kurulum dosyası: afi-sinif-kurulum.exe — kurulum sırasında "Öğretmen bilgisayarı (sunucu)" ya da "Öğrenci bilgisayarı (istemci)" seçilir.
+            Kurulum rehberi: https://aydinincekara.github.io/isikcirobot_offline/
           files: |
-            dist/afi-sunucu.exe
-            dist/afi-istemci.exe
+            dist/afi-sinif-kurulum.exe

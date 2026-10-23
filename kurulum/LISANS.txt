@@ -1,0 +1,25 @@
+﻿afi sınıf — Kullanım Lisansı
+© 2026 Aydın İncekara · https://aydinincekara.github.io/isikcirobot_offline/
+
+Lütfen kurulumdan önce okuyun. Programı kurarak bu koşulları kabul etmiş olursunuz.
+
+1. ÜCRETSİZ EĞİTİM KULLANIMI
+afi sınıf ve AFİ KOD; okullarda, gençlik merkezlerinde, bilgi evlerinde ve evde eğitim amacıyla ücretsiz kullanılabilir. Kurumunuzdaki istediğiniz sayıda bilgisayara kurabilir, kurulum dosyasını değiştirmeden çoğaltıp dağıtabilirsiniz.
+
+2. SATIŞ VE AD
+Program satılamaz, ücret karşılığında dağıtılamaz. "afi" adı ve logosu Aydın İncekara'ya aittir; değiştirilmiş sürümler bu ad ve logo ile dağıtılamaz.
+
+3. VERİLER NEREDE TUTULUR?
+Öğrenci adı, seçilen robot, ilerleme (yıldızlar) ve dizilen bloklar yalnızca öğrencinin bilgisayarında ve sınıfın öğretmen bilgisayarında tutulur. Program bu bilgileri internete göndermez. İnternete yalnızca "Güncellemeleri denetle" düğmesine basıldığında, yeni sürüm olup olmadığını öğrenmek için GitHub'daki indirme sayfasına bağlanır.
+
+4. ÖĞRENCİ BİLGİLERİ
+Öğrenci adlarını kaydetmeden önce gerekli bilgilendirmeyi (ör. KVKK kapsamında veli ve öğrenci bilgilendirmesi) yapmak, programı kullanan kurumun sorumluluğundadır. Öneri: tam ad yerine yalnızca ad ya da takma ad kullanın. Dönem sonunda öğretmen panelindeki "Öğrenci verilerini sil" düğmesiyle kayıtlar silinebilir.
+
+5. KULLANILAN AÇIK KAYNAK PARÇALAR
+- Blockly — Apache License 2.0 (Raspberry Pi Foundation, önceden Google)
+- Python ve standart kütüphanesi — Python Software Foundation Lisansı
+- Fredoka ve Nunito yazı tipleri — SIL Open Font License 1.1
+Bu parçalar kendi lisanslarıyla kullanılır.
+
+6. GARANTİ YOKTUR
+Program "olduğu gibi" sunulur. Doğru çalışması için özen gösterilmiştir; ancak kullanımdan doğabilecek veri kaybı ya da başka zararlardan geliştirici sorumlu tutulamaz. Önemli kayıtların yedeğini öğretmen panelindeki "Yedek" bölümünden düzenli olarak alın.
