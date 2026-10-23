@@ -49,13 +49,25 @@ jobs:
       - name: afi-istemci.exe
         run: pyinstaller --noconfirm --onefile --noconsole --name afi-istemci --icon tools/ikon/afi-istemci.ico --add-data "afi_sinif/paketler;afi_sinif/paketler" afi-istemci.py
       - name: Deneme
+        timeout-minutes: 4
         shell: pwsh
         run: |
-          dist\afi-sunucu.exe --deneme --tarayici-acma --veri "$env:RUNNER_TEMP\sunucu"
-          if ($LASTEXITCODE -ne 0) { throw "afi-sunucu denemesi basarisiz" }
-          $p = Start-Process -FilePath dist\afi-istemci.exe -ArgumentList '--deneme','--veri',"$env:RUNNER_TEMP\istemci" -Wait -PassThru
-          if ($p.ExitCode -ne 0) { throw "afi-istemci denemesi basarisiz: $($p.ExitCode)" }
+          $hata = $false
+          function Dene($ad, $exe, $argv) {
+            $out = "$env:RUNNER_TEMP\$ad-out.txt"; $err = "$env:RUNNER_TEMP\$ad-err.txt"
+            $p = Start-Process -FilePath $exe -ArgumentList $argv -PassThru -RedirectStandardOutput $out -RedirectStandardError $err -NoNewWindow
+            $null = $p.Handle
+            $bitti = $p.WaitForExit(60000)
+            $metin = ((Get-Content $out -Raw -ErrorAction SilentlyContinue) + " | " + (Get-Content $err -Raw -ErrorAction SilentlyContinue)) -replace "`r?`n", " / "
+            $gunluk = Get-ChildItem "$env:RUNNER_TEMP\$ad-veri" -Recurse -Filter gunluk.txt -ErrorAction SilentlyContinue | Get-Content -Raw
+            if (-not $bitti) { $p.Kill($true); Write-Host "::error::$ad 60 saniyede bitmedi. Çıktı: $metin Günlük: $($gunluk -replace "`r?`n", ' / ')"; return $false }
+            if ($p.ExitCode -ne 0) { Write-Host "::error::$ad çıkış kodu $($p.ExitCode). Çıktı: $metin Günlük: $($gunluk -replace "`r?`n", ' / ')"; return $false }
+            Write-Host "::notice::$ad tamam: $metin"; return $true
+          }
+          if (-not (Dene "sunucu" "dist\afi-sunucu.exe" @("--deneme", "--tarayici-acma", "--port", "8123", "--veri", "$env:RUNNER_TEMP\sunucu-veri"))) { $hata = $true }
+          if (-not (Dene "istemci" "dist\afi-istemci.exe" @("--deneme", "--port", "8124", "--veri", "$env:RUNNER_TEMP\istemci-veri"))) { $hata = $true }
           Get-ChildItem dist
+          if ($hata) { exit 1 }
       - uses: actions/upload-artifact@v4
         with:
           name: afi-sinif-windows
