@@ -84,6 +84,7 @@ class IstemciTesti(unittest.TestCase):
         self.assertEqual(c["surum"], "9.1")
         r = app.db.tek("SELECT * FROM ogrenci WHERE anahtar=?", (ortak.anahtar_yap("Deniz", "rover"),))
         self.assertEqual(r["istemci"], 1)
+        self.assertEqual(r["oturum"], ortak.windows_kullanici(), "Windows kullanıcı adı panelde görünür")
         self.assertEqual(r["adim"], "a2")
         self.assertGreaterEqual(app.db.tek("SELECT COUNT(*) AS n FROM olay")["n"], 1, "çevrimdışı olaylar da gitti")
         kod, b = self.t.iste("/api/v1/bilgi")

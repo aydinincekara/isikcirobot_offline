@@ -26,9 +26,10 @@ AppSupportURL=https://aydinincekara.github.io/isikcirobot_offline/
 AppCopyright=© 2026 Aydın İncekara
 VersionInfoVersion={#Surum}
 VersionInfoDescription=afi sınıf kurulumu
-DefaultDirName={autopf}\afi sinif
+DefaultDirName={code:VarsayilanKlasor}
 DisableDirPage=no
-UsePreviousAppDir=yes
+UsePreviousAppDir=no
+DirExistsWarning=no
 DefaultGroupName={#UygAd}
 DisableProgramGroupPage=yes
 DisableWelcomePage=no
@@ -79,6 +80,8 @@ Source: "gorsel\robot-3.bmp"; Flags: dontcopy
 Source: "gorsel\robot-4.bmp"; Flags: dontcopy
 
 [Dirs]
+Name: "{app}\kayitlar"; Permissions: users-modify; Flags: uninsneveruninstall; Check: IsAdminInstallMode
+Name: "{app}\kayitlar"; Flags: uninsneveruninstall; Check: not IsAdminInstallMode
 Name: "{code:VeriKlasoru}"; Permissions: users-modify; Flags: uninsneveruninstall; Check: RolSunucu and IsAdminInstallMode
 Name: "{code:VeriKlasoru}"; Flags: uninsneveruninstall; Check: RolSunucu and not IsAdminInstallMode
 
@@ -99,7 +102,7 @@ Type: files; Name: "{localappdata}\afi-sinif\afi-istemci.exe"
 [Icons]
 Name: "{autodesktop}\afi sınıf sunucusu"; Filename: "{app}\afi-sunucu.exe"; WorkingDir: "{app}"; IconFilename: "{app}\afi.ico"; Comment: "Öğretmen paneli ve sınıf sunucusu"; Check: RolSunucu and SecMasaustu
 Name: "{autoprograms}\afi sınıf\afi sınıf sunucusu"; Filename: "{app}\afi-sunucu.exe"; WorkingDir: "{app}"; IconFilename: "{app}\afi.ico"; Check: RolSunucu
-Name: "{autostartup}\afi sınıf sunucusu"; Filename: "{app}\afi-sunucu.exe"; Parameters: "--tarayici-acma"; WorkingDir: "{app}"; IconFilename: "{app}\afi.ico"; Flags: runminimized; Check: RolSunucu and SecBaslangic
+Name: "{autostartup}\afi sınıf sunucusu"; Filename: "{app}\afi-sunucu.exe"; Parameters: "--tarayici-acma"; WorkingDir: "{app}"; IconFilename: "{app}\afi.ico"; Check: RolSunucu and SecBaslangic
 Name: "{autodesktop}\AFİ KOD"; Filename: "{app}\afi-istemci.exe"; WorkingDir: "{app}"; IconFilename: "{app}\afi.ico"; Comment: "AFİ KOD blok kodlama"; Check: RolIstemci and SecMasaustu
 Name: "{autoprograms}\afi sınıf\AFİ KOD"; Filename: "{app}\afi-istemci.exe"; WorkingDir: "{app}"; IconFilename: "{app}\afi.ico"; Check: RolIstemci
 Name: "{autostartup}\afi istemci"; Filename: "{app}\afi-istemci.exe"; Parameters: "--arka-plan"; WorkingDir: "{app}"; Check: RolIstemci and SecBaslangic
@@ -128,7 +131,9 @@ var
   CbDuvar, CbOrtak, CbSMasa, CbSBas, CbIBas, CbIMasa: TNewCheckBox;
   RobotResim: TBitmapImage;
   DurumYazi: TNewStaticText;
-  OncekiSurum, OncekiRol, KaldirKomutu, KaldirVeri, KaldirRol: String;
+  OncekiSurum, OncekiRol, KaldirKomutu, KaldirVeri, KaldirRol, OncekiKlasor: String;
+  OncekiKok: Integer;
+  SonOtomatikVeri: String;
   KaldirildiKapat: Boolean;
   SonKare: Integer;
 
@@ -173,6 +178,7 @@ end;
 function VeriKlasoru(Bos: String): String;
 begin
   Result := Trim(EdVeri.Text);
+  if Result = '' then Result := ExpandConstant('{app}\kayitlar\sunucu');
 end;
 
 function JsonMetin(S: String): String;
@@ -220,9 +226,26 @@ end;
 
 function KayitOku(Ad: String; var Deger: String): Boolean;
 begin
-  Result := RegQueryStringValue(HKLM64, KALDIR_ANAHTAR, Ad, Deger)
-    or RegQueryStringValue(HKLM32, KALDIR_ANAHTAR, Ad, Deger)
-    or RegQueryStringValue(HKCU, KALDIR_ANAHTAR, Ad, Deger);
+  Result := True;
+  if RegQueryStringValue(HKLM64, KALDIR_ANAHTAR, Ad, Deger) then OncekiKok := HKLM64
+  else if RegQueryStringValue(HKLM32, KALDIR_ANAHTAR, Ad, Deger) then OncekiKok := HKLM32
+  else if RegQueryStringValue(HKCU, KALDIR_ANAHTAR, Ad, Deger) then OncekiKok := HKCU
+  else Result := False;
+end;
+
+function EskiVarsayilan(K: String): Boolean;
+{ 1.0 / 1.1 sürümlerinin varsayılan yerleri: bunlar yerine artık C:\afikod kullanılır }
+begin
+  K := Lowercase(K);
+  Result := (Pos('\afi-sinif\sunucu-veri', K) > 0) or (Pos('\afi sinif', K) > 0) or (K = '');
+end;
+
+function VarsayilanKlasor(Bos: String): String;
+var K: String;
+begin
+  K := '';
+  KayitOku('Inno Setup: App Path', K);
+  if EskiVarsayilan(K) then Result := ExpandConstant('{sd}\afikod') else Result := K;
 end;
 
 procedure Durum(Metin: String; Kare: Integer);
@@ -301,7 +324,7 @@ end;
 procedure SunucuSayfasiniYap;
 var Y: Integer; T: TNewStaticText; B: TNewButton; Varsayilan: String;
 begin
-  SunucuSayfa := CreateCustomPage(RolSayfa.ID, 'Öğretmen bilgisayarı ayarları', 'Bunları sonra öğretmen panelinden ya da kurulumu yeniden çalıştırarak değiştirebilirsiniz.');
+  SunucuSayfa := CreateCustomPage(wpSelectDir, 'Öğretmen bilgisayarı ayarları', 'Bunları sonra öğretmen panelinden ya da kurulumu yeniden çalıştırarak değiştirebilirsiniz.');
   T := Yazi(SunucuSayfa, 'Sunucunun adı (öğrencilerin ekranında görünür)', 0, 0, False);
   EdAd := Kutucuk(SunucuSayfa, T.Top + T.Height + ScaleY(3), SunucuSayfa.SurfaceWidth, Param('AD', GetPreviousData('Ad', 'afi sınıf - ' + GetComputerNameString)));
   Y := EdAd.Top + EdAd.Height + ScaleY(8);
@@ -310,12 +333,10 @@ begin
   EdPort := Kutucuk(SunucuSayfa, T.Top + T.Height + ScaleY(3), ScaleX(80), Param('PORT', GetPreviousData('Port', '8000')));
   Y := EdPort.Top + EdPort.Height + ScaleY(8);
 
-  if IsAdminInstallMode then
-    Varsayilan := ExpandConstant('{commonappdata}\afi-sinif\sunucu-veri')
-  else
-    Varsayilan := ExpandConstant('{localappdata}\afi-sinif\sunucu-veri');
+  Varsayilan := GetPreviousData('Veri', '');
+  if EskiVarsayilan(Varsayilan) then Varsayilan := '';
   T := Yazi(SunucuSayfa, 'Öğrenci kayıtlarının tutulacağı klasör (yedek için bu klasörü kopyalamanız yeter)', 0, Y, False);
-  EdVeri := Kutucuk(SunucuSayfa, T.Top + T.Height + ScaleY(3), SunucuSayfa.SurfaceWidth - ScaleX(90), Param('VERI', GetPreviousData('Veri', Varsayilan)));
+  EdVeri := Kutucuk(SunucuSayfa, T.Top + T.Height + ScaleY(3), SunucuSayfa.SurfaceWidth - ScaleX(90), Param('VERI', Varsayilan));
   B := TNewButton.Create(SunucuSayfa);
   B.Parent := SunucuSayfa.Surface;
   B.Caption := 'Gözat...';
@@ -348,7 +369,7 @@ begin
   Y := T.Top + T.Height + ScaleY(14);
   CbIBas := Kutu(IstemciSayfa, 'Windows açılınca arka planda başlat (önerilir)', Y, ParamAcik('BASLANGIC', GetPreviousData('IBaslangic', '1') = '1'));
   CbIMasa := Kutu(IstemciSayfa, 'Masaüstüne "AFİ KOD" kısayolu koy', Y + ScaleY(20), ParamAcik('MASAUSTU', GetPreviousData('IMasaustu', '1') = '1'));
-  T := Yazi(IstemciSayfa, 'Öğrenci kayıtları her Windows kullanıcısının kendi klasöründe tutulur (%LOCALAPPDATA%\afi-sinif). Bağlantı yokken biriken kayıtlar, sunucu bulununca gönderilir.', 0, Y + ScaleY(52), False);
+  T := Yazi(IstemciSayfa, 'Kayıtlar kurulum klasöründeki "kayitlar\istemci" içinde, her Windows kullanıcısı için ayrı klasörde tutulur. Bağlantı yokken biriken kayıtlar, sunucu bulununca gönderilir.', 0, Y + ScaleY(52), False);
   T.Font.Color := $707070;
 end;
 
@@ -382,6 +403,7 @@ begin
   KayitOku('DisplayVersion', OncekiSurum);
   KayitOku('Inno Setup CodeFile: Rol', OncekiRol);
   KayitOku('UninstallString', KaldirKomutu);
+  KayitOku('Inno Setup: App Path', OncekiKlasor);
   if OncekiSurum <> '' then
   begin
     BakimSayfa := CreateInputOptionPage(wpWelcome, 'afi sınıf bu bilgisayarda kurulu',
@@ -408,6 +430,11 @@ end;
 procedure CurPageChanged(CurPageID: Integer);
 var Port: String;
 begin
+  if (CurPageID = SunucuSayfa.ID) and ((Trim(EdVeri.Text) = '') or (EdVeri.Text = SonOtomatikVeri)) then
+  begin
+    SonOtomatikVeri := AddBackslash(WizardDirValue) + 'kayitlar\sunucu';
+    EdVeri.Text := SonOtomatikVeri;
+  end;
   if (CurPageID = wpLicense) and Onizleme then
     WizardForm.LicenseAcceptedRadio.Checked := True;
   if CurPageID = wpFinished then
@@ -415,9 +442,10 @@ begin
     Port := Trim(EdPort.Text);
     if RolSunucu then
       WizardForm.FinishedLabel.Caption :=
-        'afi sınıf sunucusu kuruldu.' + #13#10#13#10 +
+        'afi sınıf sunucusu kuruldu. Arka planda, penceresiz çalışır: saatin yanındaki afi simgesine tıklayınca öğretmen paneli açılır.' + #13#10#13#10 +
         'Öğrenciler tarayıcıda  http://' + GetComputerNameString + ':' + Port + '  adresini açar ya da afi istemciyle kendiliğinden bağlanır.' + #13#10#13#10 +
         'Öğretmen paneli:  http://localhost:' + Port + '/panel/' + #13#10 +
+        'Kayıtlar:  ' + VeriKlasoru('') + #13#10 +
         'İlk açılışta admin hesabınızı oluşturun.'
     else
       WizardForm.FinishedLabel.Caption :=
@@ -477,7 +505,7 @@ begin
   begin
     S := 'Kurulum türü:' + NewLine + Space + 'Öğretmen bilgisayarı (sunucu)' + NewLine + NewLine;
     S := S + 'Sunucu:' + NewLine + Space + Trim(EdAd.Text) + '  ·  port ' + Trim(EdPort.Text) + NewLine + NewLine;
-    S := S + 'Öğrenci kayıtları:' + NewLine + Space + Trim(EdVeri.Text) + NewLine + NewLine;
+    S := S + 'Öğrenci kayıtları:' + NewLine + Space + VeriKlasoru('') + NewLine + NewLine;
     if CbDuvar.Checked then
     begin
       if CbOrtak.Checked then S := S + 'Güvenlik duvarı:' + NewLine + Space + 'izin verilecek (özel, etki alanı ve ortak ağlar)' + NewLine + NewLine
@@ -491,6 +519,7 @@ begin
       S := S + 'Öğretmen sunucusu:' + NewLine + Space + 'ağda kendiliğinden bulunacak' + NewLine + NewLine
     else
       S := S + 'Öğretmen sunucusu:' + NewLine + Space + Trim(EdAdres.Text) + NewLine + NewLine;
+    S := S + 'Kayıtlar:' + NewLine + Space + ExpandConstant('{app}\kayitlar\istemci') + '\<Windows kullanıcısı>' + NewLine + NewLine;
   end;
   S := S + MemoDirInfo + NewLine + NewLine;
   S := S + 'Kısayollar:' + NewLine;
@@ -505,7 +534,7 @@ begin
   if RolSunucu then SetPreviousData(PreviousDataKey, 'Rol', 'sunucu') else SetPreviousData(PreviousDataKey, 'Rol', 'istemci');
   SetPreviousData(PreviousDataKey, 'Ad', Trim(EdAd.Text));
   SetPreviousData(PreviousDataKey, 'Port', Trim(EdPort.Text));
-  SetPreviousData(PreviousDataKey, 'Veri', Trim(EdVeri.Text));
+  SetPreviousData(PreviousDataKey, 'Veri', VeriKlasoru(''));
   SetPreviousData(PreviousDataKey, 'Sunucu', Trim(EdAdres.Text));
   if CbOrtak.Checked then SetPreviousData(PreviousDataKey, 'Ortak', '1') else SetPreviousData(PreviousDataKey, 'Ortak', '0');
   if CbSMasa.Checked then SetPreviousData(PreviousDataKey, 'SMasaustu', '1') else SetPreviousData(PreviousDataKey, 'SMasaustu', '0');
@@ -515,9 +544,27 @@ begin
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var R, I: Integer; Kok: Integer; Komut: String;
 begin
   Durum('Açık afi programları kapatılıyor...', 1);
   UygulamalariKapat;
+  { eski sürüm başka klasörde ya da başka kapsamda (yalnızca benim için / herkes için) kuruluysa önce onu kaldır;
+    kayıtlar silinmez, program ilk açılışta onları yeni yerine taşır }
+  if IsAdminInstallMode then Kok := HKLM64 else Kok := HKCU;
+  if (OncekiSurum <> '') and ((CompareText(RemoveBackslashUnlessRoot(OncekiKlasor), RemoveBackslashUnlessRoot(WizardDirValue)) <> 0) or (OncekiKok <> Kok)) then
+  begin
+    Durum('Eski kurulum kaldırılıyor (kayıtlar korunur)...', 1);
+    Komut := RemoveQuotes(KaldirKomutu);
+    if FileExists(Komut) then
+    begin
+      Exec(Komut, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, R);
+      for I := 1 to 60 do
+      begin
+        if not FileExists(Komut) then Break;
+        Sleep(500);
+      end;
+    end;
+  end;
   Result := '';
 end;
 
@@ -538,13 +585,15 @@ begin
   SetArrayLength(J, 1);
   if RolSunucu then
     J[0] := '{"rol": "sunucu", "surum": "{#Surum}", "ad": ' + JsonMetin(Trim(EdAd.Text)) +
-            ', "port": ' + IntToStr(StrToIntDef(Trim(EdPort.Text), 8000)) + ', "veri": ' + JsonMetin(Trim(EdVeri.Text)) + '}'
+            ', "port": ' + IntToStr(StrToIntDef(Trim(EdPort.Text), 8000)) + ', "veri": ' + JsonMetin(VeriKlasoru('')) + '}'
   else
-    J[0] := '{"rol": "istemci", "surum": "{#Surum}", "sunucu": ' + JsonMetin(Trim(EdAdres.Text)) + '}';
+    J[0] := '{"rol": "istemci", "surum": "{#Surum}", "sunucu": ' + JsonMetin(Trim(EdAdres.Text)) +
+            ', "veri_istemci": ' + JsonMetin(ExpandConstant('{app}\kayitlar\istemci')) + '}';
   SaveStringsToUTF8File(Dosya, J, False);
   Ozel := ExpandConstant('{app}\kurulum.ini');
   if RolSunucu then SetIniString('kurulum', 'rol', 'sunucu', Ozel) else SetIniString('kurulum', 'rol', 'istemci', Ozel);
-  SetIniString('kurulum', 'veri', Trim(EdVeri.Text), Ozel);
+  if RolSunucu then SetIniString('kurulum', 'veri', VeriKlasoru(''), Ozel)
+  else SetIniString('kurulum', 'veri', ExpandConstant('{app}\kayitlar\istemci'), Ozel);
 end;
 
 procedure DuvarAyarla;
@@ -612,10 +661,10 @@ begin
                 'Hayır derseniz kayıtlar kalır; afi sınıf yeniden kurulunca kaldığı yerden devam eder.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
         DelTree(KaldirVeri, True, True, True);
     end
-    else if (KaldirRol = 'istemci') and DirExists(ExpandConstant('{localappdata}\afi-sinif')) then
+    else if (KaldirRol = 'istemci') and (KaldirVeri <> '') and DirExists(KaldirVeri) then
     begin
-      if MsgBox('Bu kullanıcının bu bilgisayardaki AFİ KOD kayıtları da silinsin mi?', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
-        DelTree(ExpandConstant('{localappdata}\afi-sinif'), True, True, True);
+      if MsgBox('Bu bilgisayardaki AFİ KOD kayıtları da silinsin mi?' + #13#10#13#10 + KaldirVeri, mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
+        DelTree(KaldirVeri, True, True, True);
     end;
   end;
 end;

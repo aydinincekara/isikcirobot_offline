@@ -50,6 +50,7 @@ class Istemci:
         self.sunucu = None          # "http://192.168.1.20:8000"
         self.sunucu_bilgi = None
         self.son_temas = 0
+        self.son_arama = 0
         self.durum_mesaj = "Sunucu aranıyor..."
         self.guncelleme_mesaj = ""
         self.lan_ip = (ortak.yerel_ipler() or ["127.0.0.1"])[0]
@@ -173,6 +174,7 @@ class Istemci:
         return None, None
 
     def bul(self):
+        self.son_arama = time.time()
         for adres in self.adaylar():
             b = self._dene(adres)
             if b:
@@ -282,7 +284,7 @@ class Istemci:
     def nabiz(self, v):
         v = dict(v)
         cihaz = dict(v.get("cihaz") or {})
-        cihaz.update({"istemci": True, "ad": ortak.bilgisayar_adi(), "ip": self.lan_ip})
+        cihaz.update({"istemci": True, "ad": ortak.bilgisayar_adi(), "ip": self.lan_ip, "kullanici": ortak.windows_kullanici()})
         v["cihaz"] = cihaz
         with self.kilit:
             eski_olaylar = self.kuyruk["olaylar"]
@@ -302,6 +304,8 @@ class Istemci:
             with self.kilit:
                 self.kuyruk["olaylar"] = (v["olaylar"] + self.kuyruk["olaylar"])[-200:]
             self.kuyruk_kaydet()
+            if time.time() - self.son_arama > 8:       # öğrenci çalışıyorken sunucuyu daha sık ara
+                self.uyandir.set()
             return {"ok": True, "cevrimdisi": True, "mesajlar": [], "surum": self.paketler.aktif(v.get("uygulama") or "afi-kod")[0]}
 
     def ilerleme_yaz(self, v):

@@ -44,6 +44,27 @@ class KurulumTesti(unittest.TestCase):
             f.write("{bozuk")
         self.assertEqual(ortak.kurulum_bilgisi(), {})
 
+    def test_varsayilan_kayitlar_klasoru_ve_tasima(self):
+        self.yaz({"rol": "sunucu", "port": 8000})
+        eski = os.path.join(self.k, "yerel", "afi-sinif", "sunucu-veri")
+        os.makedirs(eski)
+        with open(os.path.join(eski, "afi-sinif.db"), "w") as f:
+            f.write("eski")
+        with mock.patch.dict(os.environ, {"LOCALAPPDATA": os.path.join(self.k, "yerel")}):
+            yol = ortak.veri_klasoru("sunucu")
+        self.assertEqual(yol, os.path.join(self.k, "kayitlar", "sunucu"))
+        with open(os.path.join(yol, "afi-sinif.db")) as f:
+            self.assertEqual(f.read(), "eski")
+        self.assertTrue(os.path.isdir(eski + "-tasindi"), "eski klasör yedek olarak kalır")
+        self.assertIn("taşındı", open(os.path.join(yol, "gunluk.txt"), encoding="utf-8").read())
+
+    def test_istemci_kullaniciya_gore(self):
+        self.yaz({"rol": "istemci", "veri_istemci": os.path.join(self.k, "kayitlar", "istemci")})
+        with mock.patch.dict(os.environ, {"USERNAME": "öğrenci 1", "LOCALAPPDATA": os.path.join(self.k, "yok")}):
+            yol = ortak.veri_klasoru("istemci")
+        self.assertEqual(os.path.dirname(yol), os.path.join(self.k, "kayitlar", "istemci"))
+        self.assertTrue(os.path.basename(yol).startswith("öğrenci"))
+
 
 if __name__ == "__main__":
     unittest.main()

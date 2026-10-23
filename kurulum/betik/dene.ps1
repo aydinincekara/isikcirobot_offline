@@ -20,26 +20,39 @@ function Json($yol) { Get-Content $yol -Raw -Encoding UTF8 | ConvertFrom-Json }
 function Kural { & netsh advfirewall firewall show rule name="afi sinif sunucusu" | Out-Null; return ($LASTEXITCODE -eq 0) }
 function Istek($url) { try { return Invoke-RestMethod -Uri $url -TimeoutSec 3 } catch { return $null } }
 
-# ---------------------------------------------------------------- 1) öğretmen bilgisayarı
-Kur @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/ALLUSERS", "/DIR=$hedef", "/ROL=sunucu", "/PORT=8125", "/AD=Deneme-Sınıfı", "/VERI=$veri", "/ORTAK=0")
-Kontrol (Test-Path "$hedef\afi-sunucu.exe") "sunucu programı kuruldu"
+# ---------------------------------------------------------------- 1) öğretmen bilgisayarı (varsayılan klasör C:\afikod)
+# 1.1 sürümünün kayıt yeri: yeni sürüm bunları C:\afikod\kayitlar\sunucu içine taşımalı
+$eski = Join-Path $env:LOCALAPPDATA "afi-sinif\sunucu-veri"
+python -c "import sys; sys.path.insert(0, '.'); from afi_sinif import sunucu; a = sunucu.Sunucu(sys.argv[1], port=0, sessiz=True); a.kullanici_ekle('eski', 'Eski Hoca', 'gizli123', 'admin', [])" $eski
+Kontrol (Test-Path "$eski\afi-sinif.db") "eski sürüm kayıtları hazırlandı"
+Kur @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/ALLUSERS", "/ROL=sunucu", "/PORT=8125", "/AD=Deneme-Sınıfı", "/ORTAK=0")
+$hedef = "C:\afikod"
+$veri = "C:\afikod\kayitlar\sunucu"
+Kontrol (Test-Path "$hedef\afi-sunucu.exe") "sunucu programı C:\afikod içine kuruldu"
 Kontrol (-not (Test-Path "$hedef\afi-istemci.exe")) "istemci programı yok"
 $k = Json "$hedef\kurulum.json"
 Kontrol ($k.rol -eq "sunucu" -and $k.port -eq 8125 -and $k.veri -eq $veri) "kurulum.json: $($k | ConvertTo-Json -Compress)"
 Kontrol (Kural) "güvenlik duvarı kuralı eklendi"
 Kontrol (Test-Path "$env:PUBLIC\Desktop\afi sınıf sunucusu.lnk") "masaüstü kısayolu"
-Kontrol (Test-Path "$veri") "veri klasörü oluştu"
-$p = Start-Process -FilePath "$hedef\afi-sunucu.exe" -ArgumentList @("--tarayici-acma") -PassThru -WindowStyle Hidden
+$p = Start-Process -FilePath "$hedef\afi-sunucu.exe" -ArgumentList @("--tarayici-acma") -PassThru
 $b = $null
-for ($i = 0; $i -lt 20 -and -not $b; $i++) { Start-Sleep -Milliseconds 500; $b = Istek "http://127.0.0.1:8125/api/v1/bilgi" }
-Kontrol ($b -and $b.rol -eq "sunucu") "kurulu sunucu kurulumdaki portta (8125) çalıştı"
+for ($i = 0; $i -lt 30 -and -not $b; $i++) { Start-Sleep -Milliseconds 500; $b = Istek "http://127.0.0.1:8125/api/v1/bilgi" }
+Kontrol ($b -and $b.rol -eq "sunucu") "kurulu sunucu penceresiz, kurulumdaki portta (8125) çalıştı"
 Kontrol ($b -and $b.ad -eq "Deneme-Sınıfı") "sunucu adı kurulumdan geldi: $($b.ad)"
-Kontrol (Test-Path "$veri\afi-sinif.db") "veritabanı seçilen klasörde"
-Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+Kontrol (Test-Path "$veri\afi-sinif.db") "veritabanı C:\afikod\kayitlar\sunucu içinde"
+Kontrol ($b -and $b.kurulum_gerekli -eq $false) "eski kayıtlar (öğretmen hesabı) yeni yere taşındı"
+Kontrol (Test-Path "$eski-tasindi") "eski klasör '-tasindi' adıyla yedek kaldı"
+$ses = $null
+try { $g = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8125/api/v1/giris" -Body (@{ kullanici = "eski"; sifre = "gizli123" } | ConvertTo-Json) -ContentType "application/json; charset=utf-8" -SessionVariable ses } catch { Hata "giriş: $_" }
+$d = $null; try { $d = Invoke-RestMethod -Uri "http://127.0.0.1:8125/api/v1/sunucu" -WebSession $ses } catch { Hata "sunucu bilgisi: $_" }
+Kontrol ($d -and $d.veri_klasoru -eq $veri -and $d.kapatilabilir) "panelde sunucu bilgisi: $($d.veri_klasoru)"
+try { Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8125/api/v1/sunucu/kapat" -Body "{}" -ContentType "application/json" -WebSession $ses | Out-Null } catch { Hata "kapat: $_" }
+$kapandi = $p.WaitForExit(15000)
+Kontrol $kapandi "panelden 'Sunucuyu kapat' programı kapattı"
 Get-Process afi-sunucu -ErrorAction SilentlyContinue | Stop-Process -Force
 
 # ---------------------------------------------------------------- 2) aynı bilgisayarı öğrenciye çevir (rol değiştirme)
-Kur @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/ALLUSERS", "/DIR=$hedef", "/ROL=istemci", "/SUNUCU=127.0.0.1:8125", "/BASLANGIC=1")
+Kur @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/ALLUSERS", "/ROL=istemci", "/SUNUCU=127.0.0.1:8125", "/BASLANGIC=1")
 Kontrol (Test-Path "$hedef\afi-istemci.exe") "istemci programı kuruldu"
 Kontrol (-not (Test-Path "$hedef\afi-sunucu.exe")) "sunucu programı kaldırıldı"
 Kontrol (-not (Kural)) "güvenlik duvarı kuralı kaldırıldı"
@@ -50,6 +63,7 @@ $b = $null
 for ($i = 0; $i -lt 30 -and -not $b; $i++) { Start-Sleep -Milliseconds 500; $b = Istek "http://127.0.0.1:8100/api/v1/durum" }
 Kontrol ($b -and $b.rol -eq "istemci") "istemci kurulumdan sonra arka planda başladı"
 Kontrol ($b -and $b.ayar.sunucu -eq "http://127.0.0.1:8125") "istemcinin sunucu adresi kurulumdan geldi: $($b.ayar.sunucu)"
+Kontrol (Test-Path "C:\afikod\kayitlar\istemci\$env:USERNAME\ayarlar.json") "istemci kayıtları C:\afikod\kayitlar\istemci\$env:USERNAME içinde"
 $sayfa = $null; try { $sayfa = (Invoke-WebRequest -Uri "http://127.0.0.1:8100/afi-kod/" -UseBasicParsing -TimeoutSec 5).Content } catch {}
 Kontrol ($sayfa -and $sayfa.Contains("sinif.js")) "AFİ KOD istemciden açılıyor"
 

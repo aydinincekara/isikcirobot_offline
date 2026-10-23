@@ -40,7 +40,7 @@
     $('sekmeler').hidden = false; $('kullaniciKutu').hidden = false;
     $('kullaniciAd').textContent = k.ad + (k.rol === 'admin' ? ' (admin)' : '');
     document.querySelectorAll('[data-admin]').forEach(function (e) { e.hidden = k.rol !== 'admin'; });
-    sekme('sinif');
+    sekme(/^#ayarlar$/.test(location.hash) ? 'ayarlar' : 'sinif');
     yenile(); setInterval(function () { if (S.sekme === 'sinif' && !document.hidden) yenile(); }, 3000);
     uygulamaYukle(S.uyg).then(function () { ciz(); }).catch(function () {});
   }
@@ -105,6 +105,7 @@
       var u = c.uygulamalar || [], sec = $('uygSec');
       sec.hidden = u.length < 2;
       if (u.length && !u.some(function (x) { return x.uygulama === S.uyg; })) S.uyg = u[0].uygulama;
+      $('uygAcBtn').href = '/' + S.uyg + '/';
       sec.innerHTML = u.map(function (x) { return '<option value="' + esc(x.uygulama) + '"' + (x.uygulama === S.uyg ? ' selected' : '') + '>' + esc(x.ad) + ' ' + esc(x.surum) + '</option>'; }).join('');
       ciz();
       if (S.secili) ayrinti(S.secili, true);
@@ -115,14 +116,15 @@
   $('csvBtn').onclick = function (e) { e.preventDefault(); location.href = '/api/v1/disa-aktar.csv?uygulama=' + encodeURIComponent(S.uyg); };
   function ciz() {
     var q = $('ara').value.trim().toLocaleLowerCase('tr'), sadece = $('sadeceCevrimici').checked;
-    var liste = S.ogr.filter(function (o) { return (!sadece || o.cevrimici) && (!q || (o.ad + ' ' + o.cihaz + ' ' + o.ip).toLocaleLowerCase('tr').indexOf(q) >= 0); });
+    var liste = S.ogr.filter(function (o) { return (!sadece || o.cevrimici) && (!q || (o.ad + ' ' + o.cihaz + ' ' + o.ip + ' ' + (o.oturum || '')).toLocaleLowerCase('tr').indexOf(q) >= 0); });
     var acik = S.ogr.filter(function (o) { return o.cevrimici; }), hata = acik.filter(function (o) { return o.durum === 'hata'; }).length;
     var ort = acik.length ? Math.round(acik.reduce(function (a, o) { return a + (o.biten || 0); }, 0) / acik.length) : 0;
     $('ozet').innerHTML = '<div><b>' + acik.length + '</b><span>şu an bağlı</span></div><div><b>' + S.ogr.length + '</b><span>kayıtlı öğrenci</span></div>' +
       '<div><b>' + ort + '</b><span>ortalama biten adım (bağlı olanlar)</span></div><div><b>' + hata + '</b><span>şu an hata almış</span></div>';
     $('ogrenciler').innerHTML = liste.map(function (o) {
       return '<button class="ogr' + (o.cevrimici ? '' : ' kapali') + '" data-anahtar="' + esc(o.anahtar) + '">' + avatar(o.robot) +
-        '<b>' + esc(o.ad) + '</b><small>' + esc([o.cihaz, o.ip, o.istemci ? 'istemci' : ''].filter(Boolean).join(' · ')) + '</small>' +
+        '<b>' + esc(o.ad) + '</b><small title="Bilgisayar · IP adresi">' + esc([o.cihaz, o.ip].filter(Boolean).join(' · ')) + '</small>' +
+        '<span class="oturum" title="Windows kullanıcısı">' + (o.oturum ? '👤 ' + esc(o.oturum) : (o.istemci ? '' : 'tarayıcıdan bağlı')) + '</span>' +
         '<span class="adim">' + esc(o.adim_ad || o.adim || '—') + '</span>' +
         '<span class="alt"><span class="hap ' + esc(o.durum || '') + '">' + esc(DURUM[o.durum] || '—') + '</span><span>★ ' + (o.yildiz || 0) + ' · ' + (o.biten || 0) + ' adım</span><small>' + once(o.son) + '</small></span>' +
         '<i class="nokta-d' + (o.cevrimici ? ' acik' : '') + '"></i></button>';
@@ -138,7 +140,7 @@
     api('ogrenci?uygulama=' + encodeURIComponent(S.uyg) + '&anahtar=' + encodeURIComponent(anahtar)).then(function (d) {
       var o = d.ogrenci; $('cekmece').hidden = false;
       $('dAd').innerHTML = avatar(o.robot).replace('<img', '<img style="width:40px;height:40px;vertical-align:middle;margin-right:8px"') + esc(o.ad);
-      $('dBilgi').innerHTML = esc([o.cihaz, o.ip].filter(Boolean).join(' · ')) + ' · ' + (o.cevrimici ? '<b style="color:var(--ok)">bağlı</b>' : 'son görülme ' + once(o.son)) +
+      $('dBilgi').innerHTML = esc([o.cihaz, o.ip, o.oturum ? 'Windows kullanıcısı: ' + o.oturum : (o.istemci ? '' : 'tarayıcıdan bağlı')].filter(Boolean).join(' · ')) + ' · ' + (o.cevrimici ? '<b style="color:var(--ok)">bağlı</b>' : 'son görülme ' + once(o.son)) +
         ' · ★ ' + (o.yildiz || 0) + ' · ' + (o.biten || 0) + ' adım<br>Şu an: ' + esc(o.adim_ad || o.adim || '—') + ' — ' + esc(DURUM[o.durum] || '');
       var b = adimlar();
       $('dBolumler').innerHTML = b ? b.map(function (x) {
@@ -259,7 +261,24 @@
   };
 
   /* ---------- ayarlar ---------- */
+  function sure(sn) { sn = Math.max(0, Math.round(sn)); var s = Math.floor(sn / 3600), d = Math.floor(sn % 3600 / 60); return (s ? s + ' saat ' : '') + d + ' dakika'; }
+  function sunucuDurum() {
+    api('sunucu').then(function (b) {
+      var satir = [['Durum', '<b style="color:var(--ok)">çalışıyor</b> · ' + sure(b.simdi - b.baslangic)], ['Sunucu', esc(b.ad)], ['Bilgisayar', esc(b.bilgisayar) + ' · port ' + b.port],
+        ['Öğrenci adresleri', b.adresler.concat([b.ad_adresi]).map(esc).join('<br>')], ['Uygulamalar', b.uygulamalar.map(function (u) { return esc(u.ad + ' ' + u.surum); }).join(', ')],
+        ['Platform', esc(b.platform)], ['Program klasörü', esc(b.program)]];
+      if (b.veri_klasoru) satir.push(['Kayıtlar', esc(b.veri_klasoru)]);
+      $('sunucuDurum').innerHTML = '<dl class="bilgi-tablo">' + satir.map(function (x) { return '<dt>' + x[0] + '</dt><dd>' + x[1] + '</dd>'; }).join('') + '</dl>';
+      if (b.gunluk) $('gunluk').textContent = b.gunluk.join('');
+      $('kapatBtn').hidden = !b.kapatilabilir || S.ben.rol !== 'admin';
+    }).catch(function (e) { $('sunucuDurum').textContent = e.message; });
+  }
+  $('kapatBtn').onclick = function () {
+    if (!confirm('Sunucu kapatılsın mı? Öğrenciler bağlanamaz (istemcisi olanlar çalışmaya devam eder). Yeniden açmak için masaüstündeki "afi sınıf sunucusu" simgesi.')) return;
+    api('sunucu/kapat', {}).then(function () { document.body.innerHTML = '<main><div class="kart dar"><h1>Sunucu kapatıldı</h1><p>Yeniden açmak için masaüstündeki <b>afi sınıf sunucusu</b> simgesine çift tıklayın.</p></div></main>'; }).catch(function (e) { toast(e.message); });
+  };
   function ayarlar() {
+    sunucuDurum();
     var adm = S.ben.rol === 'admin';
     (adm ? api('ayarlar') : Promise.resolve(null)).then(function (a) {
       var adresler = a ? a.adresler.concat([a.ad_adresi]) : [location.origin + '/'];

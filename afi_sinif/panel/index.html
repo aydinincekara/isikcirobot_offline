@@ -16,7 +16,7 @@
     <button data-sekme="guncelleme" data-admin>Güncelleme</button>
     <button data-sekme="ayarlar">Ayarlar</button>
   </nav>
-  <div class="kullanici" id="kullaniciKutu" hidden><span id="kullaniciAd"></span><button class="ince" id="cikisBtn">Çıkış</button></div>
+  <div class="kullanici" id="kullaniciKutu" hidden><a class="dugme ana" id="uygAcBtn" href="/afi-kod/" target="_blank" rel="noopener" title="AFİ KOD'u öğretmen olarak aç: Çözümü yükle düğmesi görünür">▶ AFİ KOD'u aç</a><span id="kullaniciAd"></span><button class="ince" id="cikisBtn">Çıkış</button></div>
 </header>
 
 <main id="ana">
@@ -121,6 +121,16 @@
           <button>Değiştir</button>
           <p class="hata" hidden></p>
         </form>
+      </div>
+      <div class="kart">
+        <h2>Sunucu durumu</h2>
+        <div id="sunucuDurum" class="not">Yükleniyor...</div>
+        <div data-admin>
+          <h3>Son olaylar (günlük)</h3>
+          <pre id="gunluk" class="kod" style="max-height:220px"></pre>
+          <p class="not">Sunucu arka planda, penceresiz çalışır. Görev çubuğunda saatin yanındaki afi simgesinden de panel açılır ya da sunucu kapatılır.</p>
+          <button class="tehlike" id="kapatBtn" hidden>Sunucuyu kapat</button>
+        </div>
       </div>
       <div class="kart" data-admin>
         <h2>Sunucu</h2>

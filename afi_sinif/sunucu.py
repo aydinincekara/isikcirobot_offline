@@ -73,6 +73,9 @@ class Veritabani:
         self.b.row_factory = sqlite3.Row
         with self.kilit:
             self.b.executescript(SEMA)
+            sutunlar = [r[1] for r in self.b.execute("PRAGMA table_info(ogrenci)")]
+            if "oturum" not in sutunlar:      # 1.2: öğrenci bilgisayarındaki Windows kullanıcısı
+                self.b.execute("ALTER TABLE ogrenci ADD COLUMN oturum TEXT")
             self.b.execute("PRAGMA journal_mode=WAL")
             self.b.commit()
 
@@ -151,6 +154,8 @@ class Sunucu:
         if guncelleme_adresi:
             self.db.ayar_yaz("guncelleme_adresi", guncelleme_adresi)
         self.son_denetim = None
+        self.baslangic = simdi()
+        self.kapat = None              # calistir() doldurur: sunucuyu kapatan işlev
         self.guncelleme_durum = {"calisiyor": False, "mesaj": ""}
         kurulan = self.paketler.gomulu_paketleri_kur()
         for k in kurulan:
@@ -219,8 +224,8 @@ class Sunucu:
             self.gunluk("Yeni öğrenci: " + ad + " (" + ip + ")")
         else:
             son_mesaj = mevcut["son_mesaj"] or 0
-        self.db.yap("UPDATE ogrenci SET ad=?, robot=?, ip=?, cihaz=?, istemci=?, son=?, adim=?, adim_ad=?, durum=?, yildiz=?, biten=? WHERE anahtar=? AND uygulama=?",
-                    (ad, robot, ip, str(cihaz.get("ad") or ip_adi(ip) or "")[:60], 1 if cihaz.get("istemci") else 0, simd, str(adim.get("id") or "")[:40],
+        self.db.yap("UPDATE ogrenci SET ad=?, robot=?, ip=?, cihaz=?, istemci=?, oturum=?, son=?, adim=?, adim_ad=?, durum=?, yildiz=?, biten=? WHERE anahtar=? AND uygulama=?",
+                    (ad, robot, ip, str(cihaz.get("ad") or ip_adi(ip) or "")[:60], 1 if cihaz.get("istemci") else 0, str(cihaz.get("kullanici") or "")[:60], simd, str(adim.get("id") or "")[:40],
                      str(adim.get("ad") or "")[:120], str(v.get("durum") or "")[:20], int(v.get("yildiz") or 0), int(v.get("biten") or 0), anahtar, uyg))
         for o in (v.get("olaylar") or [])[:20]:
             self.db.yap("INSERT INTO olay (zaman, anahtar, uygulama, tur, adim, ayrinti) VALUES (?,?,?,?,?,?)",
@@ -322,9 +327,9 @@ class Sunucu:
     def csv_uret(self, kullanici, uyg):
         cikti = io.StringIO()
         y = csv.writer(cikti, delimiter=";")
-        y.writerow(["Ad", "Robot", "Bilgisayar", "IP", "Biten adım", "Toplam yıldız", "Şu anki adım", "İlk görülme", "Son görülme"])
+        y.writerow(["Ad", "Robot", "Bilgisayar", "IP", "Windows kullanıcısı", "Biten adım", "Toplam yıldız", "Şu anki adım", "İlk görülme", "Son görülme"])
         for r in self.sinif(kullanici, uyg):
-            y.writerow([r["ad"], r["robot"], r["cihaz"], r["ip"], r["biten"], r["yildiz"], r["adim_ad"] or r["adim"],
+            y.writerow([r["ad"], r["robot"], r["cihaz"], r["ip"], r.get("oturum") or "", r["biten"], r["yildiz"], r["adim_ad"] or r["adim"],
                         time.strftime("%d.%m.%Y %H:%M", time.localtime(r["ilk"] or 0)), time.strftime("%d.%m.%Y %H:%M", time.localtime(r["son"] or 0))])
         return "﻿" + cikti.getvalue()      # BOM: Excel Türkçe karakterleri doğru açsın
 
@@ -524,6 +529,28 @@ class SunucuIsleyici(ortak.TemelIsleyici):
         if a == "disa-aktar.csv":
             veri = app.csv_uret(k, q.get("uygulama"))
             return self.gonder(200, veri, "text/csv; charset=utf-8", {"Content-Disposition": "attachment; filename=\"afi-sinif-%s.csv\"" % time.strftime("%Y%m%d")})
+        if a == "sunucu" and yontem == "GET":
+            adresler, ad_adresi = app.adresler()
+            bilgi = {"ad": app.ad, "platform": ortak.PLATFORM_SURUM, "bilgisayar": ortak.bilgisayar_adi(), "port": app.port,
+                     "baslangic": app.baslangic, "simdi": simdi(), "adresler": adresler, "ad_adresi": ad_adresi,
+                     "uygulamalar": [{x: u[x] for x in ("uygulama", "ad", "surum")} for u in app.paketler.uygulamalar()],
+                     "kurulum": bool(ortak.kurulum_bilgisi()), "program": ortak.program_klasoru(), "kapatilabilir": bool(app.kapat)}
+            if k["rol"] == "admin":
+                bilgi["veri_klasoru"] = app.veri
+                try:
+                    with open(app.gunluk_dosya, encoding="utf-8", errors="replace") as f:
+                        bilgi["gunluk"] = f.readlines()[-40:]
+                except OSError:
+                    bilgi["gunluk"] = []
+            return J(bilgi)
+        if a == "sunucu/kapat" and yontem == "POST":
+            self.oturum(rol="admin")
+            if not app.kapat:
+                raise Hata(400, "Bu sunucu buradan kapatılamaz.")
+            app.gunluk("Sunucu panelden kapatıldı (" + k["kullanici"] + ")")
+            J({"ok": True})
+            threading.Timer(0.5, app.kapat).start()
+            return None
         if a == "sifre" and yontem == "POST":
             v = self.json_govde()
             tam = app.db.tek("SELECT * FROM kullanici WHERE id=?", (k["id"],))
@@ -670,22 +697,39 @@ def portal_html(app, uyglar):
 
 
 # ======================================================================= başlatma
+def _zaten_calisiyor(port):
+    try:
+        b = ortak.http_json("http://127.0.0.1:%d/api/v1/bilgi" % port, zaman_asimi=1.5)
+        return bool(b and b.get("sistem") == ortak.SISTEM and b.get("rol") == "sunucu")
+    except (OSError, ValueError):
+        return False
+
+
 def calistir(argv=None):
     for akim in (sys.stdout, sys.stderr):     # Windows'ta Türkçe harfler yüzünden çökmesin
         try:
             akim.reconfigure(errors="replace")
         except (AttributeError, ValueError):
             pass
-    p = argparse.ArgumentParser(description="afi sınıf sunucusu")
+    if sys.stdout is None:                    # penceresiz exe
+        sys.stdout = sys.stderr = open(os.devnull, "w")
     kurulum = ortak.kurulum_bilgisi()
+    p = argparse.ArgumentParser(description="afi sınıf sunucusu")
     p.add_argument("--port", type=int, default=int(os.environ.get("AFI_PORT") or kurulum.get("port") or ortak.VARSAYILAN_PORT))
-    p.add_argument("--veri", default=None, help="veri klasörü (varsayılan: kurulumda seçilen ya da programın yanındaki afi-sunucu-veri)")
+    p.add_argument("--veri", default=None, help="kayıt klasörü (varsayılan: kurulumda seçilen ya da programın yanındaki afi-sunucu-veri)")
     p.add_argument("--guncelleme-adresi", default=None)
     p.add_argument("--tarayici-acma", action="store_true", help="başlarken paneli tarayıcıda açma")
+    p.add_argument("--konsol", action="store_true", help="bilgileri bu pencerede yazdır (simge yerine)")
     p.add_argument("--deneme", action="store_true", help="başlat, kendini dene ve kapan (kurulum testi)")
     args = p.parse_args(argv)
     if args.veri:
         os.environ["AFI_VERI"] = args.veri
+    panel = "http://localhost:%d/panel/" % args.port
+    gizli = ortak.donduruldu() and sys.platform == "win32" and not args.konsol and not args.deneme
+    if not args.deneme and _zaten_calisiyor(args.port):       # ikinci kez açıldıysa yalnızca paneli aç
+        if not args.tarayici_acma:
+            webbrowser.open(panel)
+        return 0
     veri = ortak.veri_klasoru("sunucu")
     app = Sunucu(veri, port=args.port, guncelleme_adresi=args.guncelleme_adresi)
     if kurulum.get("ad") and kurulum.get("ad") != app.db.ayar("kurulum_adi"):      # kurulumda yazılan ad (yeniden kurulumda değiştiyse)
@@ -695,26 +739,32 @@ def calistir(argv=None):
     try:
         httpd = app.baslat()
     except OSError as e:
-        print("\n  Port %d kullanımda ya da açılamadı: %s" % (args.port, e))
-        print("  Sunucu zaten açık olabilir. Başka port için: afi-sunucu.exe --port 8001\n")
-        if not args.deneme:
-            input("  Kapatmak için Enter'a basın...")
+        mesaj = ("%d numaralı port başka bir program tarafından kullanılıyor ya da açılamadı (%s).\n\n"
+                 "Kurulum dosyasını yeniden çalıştırıp başka bir port seçebilirsiniz (ör. 8001).") % (args.port, e)
+        app.gunluk("Port açılamadı: %s" % e)
+        if gizli:
+            ortak.uyari("afi sınıf sunucusu", mesaj)
+        else:
+            print("\n  " + mesaj + "\n")
+            if not args.deneme:
+                input("  Kapatmak için Enter'a basın...")
         return 1
     adresler, ad_adresi = app.adresler()
-    print("=" * 64)
-    print("  afi sınıf sunucusu çalışıyor   (platform %s)" % ortak.PLATFORM_SURUM)
-    for u in app.paketler.uygulamalar():
-        print("  Uygulama: %s %s" % (u["ad"], u["surum"]))
-    print("-" * 64)
-    print("  Öğrenciler tarayıcıda şu adreslerden birini açar:")
-    for a in adresler:
-        print("     " + a)
-    print("     " + ad_adresi + "   (IP değişse de çalışır)")
-    print("  Öğretmen paneli:  http://localhost:%d/panel/" % args.port)
-    print("  Veriler:          " + veri)
-    print("  Kapatmak için bu pencereyi kapatın ya da Ctrl+C.")
-    print("=" * 64)
-    app.gunluk("Sunucu başladı, port %d" % args.port)
+    if not gizli:
+        print("=" * 64)
+        print("  afi sınıf sunucusu çalışıyor   (platform %s)" % ortak.PLATFORM_SURUM)
+        for u in app.paketler.uygulamalar():
+            print("  Uygulama: %s %s" % (u["ad"], u["surum"]))
+        print("-" * 64)
+        print("  Öğrenciler tarayıcıda şu adreslerden birini açar:")
+        for a in adresler:
+            print("     " + a)
+        print("     " + ad_adresi + "   (IP değişse de çalışır)")
+        print("  Öğretmen paneli:  " + panel)
+        print("  Kayıtlar:         " + veri)
+        print("  Kapatmak için bu pencereyi kapatın ya da Ctrl+C.")
+        print("=" * 64)
+    app.gunluk("Sunucu başladı, port %d (%s)" % (args.port, "simge" if gizli else "pencere"))
     if args.deneme:
         t = threading.Thread(target=httpd.serve_forever, daemon=True)
         t.start()
@@ -723,7 +773,16 @@ def calistir(argv=None):
         httpd.shutdown()
         return 0 if bilgi.get("sistem") == ortak.SISTEM else 2
     if not args.tarayici_acma:
-        threading.Timer(1.0, lambda: webbrowser.open("http://localhost:%d/panel/" % args.port)).start()
+        threading.Timer(1.0, lambda: webbrowser.open(panel)).start()
+    app.kapat = httpd.shutdown
+    if gizli:
+        from . import tepsi
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        if tepsi.calistir(app, panel, httpd):          # görev çubuğundaki afi simgesi; "Sunucuyu kapat" deyince döner
+            return 0
+        t.join()                                       # simge açılamadıysa yalnızca sunucu çalışır (panelden kapatılabilir)
+        return 0
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

@@ -223,6 +223,27 @@ class SunucuTesti(unittest.TestCase):
         with self.assertRaises(ortak.PaketHatasi):
             self.app.paketler.kur(yol)
 
+    def test_085_sunucu_bilgisi_ve_kapatma(self):
+        i = Istemci(self.taban)
+        kod, b = i.iste("/api/v1/sunucu")
+        self.assertEqual(kod, 401)
+        i.iste("/api/v1/giris", {"kullanici": "aydin", "sifre": "gizli123"})
+        kod, b = i.iste("/api/v1/sunucu")
+        self.assertEqual(kod, 200, b)
+        self.assertIn("adresler", b)
+        self.assertEqual(b["veri_klasoru"], self.app.veri)
+        self.assertIsInstance(b["gunluk"], list)
+        kod, b = i.iste("/api/v1/sunucu/kapat", {})
+        self.assertEqual(kod, 400, "kapatma işlevi verilmemiş sunucu kapanmaz")
+        cagrildi = []
+        self.app.kapat = lambda: cagrildi.append(1)
+        kod, b = i.iste("/api/v1/sunucu/kapat", {})
+        self.assertEqual(kod, 200)
+        import time
+        time.sleep(0.8)
+        self.assertEqual(cagrildi, [1])
+        self.app.kapat = None
+
     def test_09_aralik(self):
         self.assertTrue(ortak.aralikta("192.168.137.45", ["192.168.137.0/24"]))
         self.assertTrue(ortak.aralikta("10.0.0.15", ["10.0.0.10-10.0.0.20"]))

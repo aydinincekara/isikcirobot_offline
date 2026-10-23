@@ -18,7 +18,7 @@ import urllib.request
 import zipfile
 from http.server import BaseHTTPRequestHandler
 
-PLATFORM_SURUM = "1.1.0"
+PLATFORM_SURUM = "1.2.0"
 SISTEM = "afi-sinif"
 VARSAYILAN_PORT = 8000
 ISTEMCI_PORT = 8100
@@ -63,25 +63,96 @@ def kurulum_bilgisi():
         return {}
 
 
+def windows_kullanici():
+    """Bilgisayarda oturum açmış kullanıcının adı (ör. ogrenci1)."""
+    for ad in ("USERNAME", "USER", "LOGNAME"):
+        if os.environ.get(ad):
+            return os.environ[ad]
+    try:
+        import getpass
+        return getpass.getuser()
+    except Exception:          # noqa: BLE001 - ad bulunamazsa önemli değil
+        return ""
+
+
+def _guvenli_ad(ad):
+    return "".join(c if c.isalnum() or c in "-_." else "_" for c in (ad or "kullanici"))[:40] or "kullanici"
+
+
+def eski_kayitlari_tasi(hedef, adaylar, isaret):
+    """Eski sürümlerin kayıt klasörünü yeni yere kopyalar (hedefte 'isaret' dosyası yoksa).
+    Eski klasör silinmez, adı '-tasindi' ile biter: bir sorun olursa elle geri alınabilir."""
+    if os.path.exists(os.path.join(hedef, isaret)):
+        return None
+    for eski in adaylar:
+        if not eski or os.path.normcase(os.path.abspath(eski)) == os.path.normcase(os.path.abspath(hedef)):
+            continue
+        if os.path.isfile(os.path.join(eski, isaret)):
+            try:
+                shutil.copytree(eski, hedef, dirs_exist_ok=True)
+                try:
+                    os.replace(eski, eski.rstrip("\\/") + "-tasindi")
+                except OSError:
+                    pass
+                return eski
+            except OSError:
+                return None
+    return None
+
+
 def veri_klasoru(rol):
-    """Verilerin tutulduğu klasör. Öncelik: AFI_VERI ortam değişkeni > kurulumda seçilen klasör > varsayılan.
-    Sunucu: kuruluysa %ProgramData%\\afi-sinif\\sunucu-veri, kurulumsuzsa programın yanındaki 'afi-sunucu-veri' (taşınabilir).
-    İstemci: Windows'ta %LOCALAPPDATA%\\afi-sinif\\veri (her Windows kullanıcısına ayrı; yönetici izni gerekmez)."""
+    """Kayıtların tutulduğu klasör. Öncelik: AFI_VERI ortam değişkeni > kurulumda seçilen klasör > varsayılan.
+    Kurulumla (varsayılan C:\afikod):  C:\afikod\kayitlar\sunucu   ve   C:\afikod\kayitlar\istemci\<Windows kullanıcısı>
+    Kurulumsuz sunucu: programın yanındaki 'afi-sunucu-veri' (taşınabilir).
+    Kurulumsuz istemci: %LOCALAPPDATA%\afi-sinif\veri."""
     yol = os.environ.get("AFI_VERI")
     k = kurulum_bilgisi()
-    if not yol and rol == "sunucu" and k.get("veri"):
-        yol = os.path.expandvars(str(k["veri"]))
+    yerel = os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), ".local", "share")
+    eskiler = []
     if not yol:
         if rol == "sunucu":
-            if k and os.environ.get("ProgramData"):
-                yol = os.path.join(os.environ["ProgramData"], "afi-sinif", "sunucu-veri")
+            if k.get("veri"):
+                yol = os.path.expandvars(str(k["veri"]))
+            elif k:
+                yol = os.path.join(program_klasoru(), "kayitlar", "sunucu")
             else:
                 yol = os.path.join(program_klasoru(), "afi-sunucu-veri")
+            if k:      # 1.0 ve 1.1 sürümlerinin kayıt yerleri
+                eskiler = [os.path.join(yerel, "afi-sinif", "sunucu-veri"), os.path.join(program_klasoru(), "afi-sunucu-veri")]
+                if os.environ.get("ProgramData"):
+                    eskiler.append(os.path.join(os.environ["ProgramData"], "afi-sinif", "sunucu-veri"))
         else:
-            taban = os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), ".local", "share")
-            yol = os.path.join(taban, "afi-sinif", "veri")
+            if k:
+                taban = os.path.expandvars(str(k.get("veri_istemci") or os.path.join(program_klasoru(), "kayitlar", "istemci")))
+                yol = os.path.join(taban, _guvenli_ad(windows_kullanici()))
+                eskiler = [os.path.join(yerel, "afi-sinif", "veri")]
+            else:
+                yol = os.path.join(yerel, "afi-sinif", "veri")
     os.makedirs(yol, exist_ok=True)
+    if eskiler:
+        eski = eski_kayitlari_tasi(yol, eskiler, "afi-sinif.db" if rol == "sunucu" else "ayarlar.json")
+        if eski:
+            try:
+                with open(os.path.join(yol, "gunluk.txt"), "a", encoding="utf-8") as f:
+                    f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + "Eski kayıtlar taşındı: " + eski + "\n")
+            except OSError:
+                pass
     return yol
+
+
+def uyari(baslik, metin):
+    """Penceresiz çalışırken kullanıcıya hata göstermek için (Windows ileti kutusu)."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, metin, baslik, 0x30)
+            return
+        except Exception:      # noqa: BLE001
+            pass
+    try:
+        print(baslik + ": " + metin)
+    except Exception:          # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------- küçük yardımcılar
