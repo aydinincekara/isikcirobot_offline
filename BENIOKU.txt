@@ -1,0 +1,25 @@
+afi sınıf - AFİ KOD sınıf sürümü
+================================
+İndirme ve kurulum: https://aydinincekara.github.io/isikcirobot_offline/
+
+ÖĞRETMEN BİLGİSAYARI
+1. afi-sunucu.exe dosyasını kalıcı bir klasöre koyun (ör. C:\afi-sinif).
+2. Çift tıklayın. "Bilgisayarınız korundu" çıkarsa: Ek bilgi > Yine de çalıştır.
+3. Güvenlik duvarı sorarsa "Özel ağlar" işaretliyken "Erişime izin ver" (bir kez yönetici izni ister).
+4. Panel tarayıcıda açılır; ilk açılışta admin hesabını oluşturun. Siyah pencere ders boyunca açık kalmalı.
+Veriler programın yanındaki afi-sunucu-veri klasöründedir; yedek için bu klasörü kopyalayın.
+
+ÖĞRENCİ BİLGİSAYARI
+- Önerilen: afi-istemci.exe bir kez çift tıklanır (yönetici izni gerekmez). Kendini kurar, masaüstüne
+  "AFİ KOD" kısayolu koyar, Windows açılışında arka planda başlar. Ağ yokken de çalışır; sunucuyu kendisi bulur.
+  Bulamazsa üst şeritteki "Sınıf bağlantısı yok" etiketine tıklayıp sunucu adresini yazın (ör. 192.168.1.20:8000).
+- Kurulumsuz: tarayıcıda http://ÖĞRETMEN-PC:8000 açılır (siyah pencerede yazan adres).
+
+NOT: Windows Mobil etkin nokta en fazla 8 cihaz bağlar; kalabalık sınıfta okul ağı ya da ayrı modem kullanın.
+
+PYTHON İLE (exe yerine, isteğe bağlı)
+Python 3.8+ gerekir. Bu klasörde Komut İstemi açıp komutları teker teker yazın:
+  python --version          (sürüm görünmezse:  py --version  ve aşağıda python yerine py)
+  python afi-sunucu.py      (öğretmen bilgisayarında)
+  python afi-istemci.py     (öğrenci bilgisayarında)
+Yönetici izni gerekmez.

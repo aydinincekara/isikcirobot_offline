@@ -1,0 +1,61 @@
+# Windows programlarını (afi-sunucu.exe, afi-istemci.exe) GitHub'ın kendi bilgisayarlarında üretir.
+# Çalıştırmak için: GitHub > Actions > "Windows programlari" > Run workflow
+# ya da bir sürüm etiketi gönderin (örnek: git tag v1.0.0 && git push --tags) -> Releases sayfasına da konur.
+name: Windows programlari
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Testler (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest discover tests -v
+
+  exe:
+    name: exe uret
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"    # Windows 8.1, 10 ve 11'de çalışır
+      - run: pip install pyinstaller==6.11.1
+      - name: afi-sunucu.exe
+        run: pyinstaller --noconfirm --onefile --console --name afi-sunucu --icon tools/ikon/afi-sunucu.ico --add-data "afi_sinif/panel;afi_sinif/panel" --add-data "afi_sinif/paketler;afi_sinif/paketler" afi-sunucu.py
+      - name: afi-istemci.exe
+        run: pyinstaller --noconfirm --onefile --noconsole --name afi-istemci --icon tools/ikon/afi-istemci.ico --add-data "afi_sinif/paketler;afi_sinif/paketler" afi-istemci.py
+      - name: Deneme
+        shell: pwsh
+        run: |
+          dist\afi-sunucu.exe --deneme --tarayici-acma --veri "$env:RUNNER_TEMP\sunucu"
+          if ($LASTEXITCODE -ne 0) { throw "afi-sunucu denemesi basarisiz" }
+          $p = Start-Process -FilePath dist\afi-istemci.exe -ArgumentList '--deneme','--veri',"$env:RUNNER_TEMP\istemci" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "afi-istemci denemesi basarisiz: $($p.ExitCode)" }
+          Get-ChildItem dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: afi-sinif-windows
+          path: dist/*.exe
+      - name: Surum sayfasi
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/afi-sunucu.exe
+            dist/afi-istemci.exe

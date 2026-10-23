@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AFİ Sınıf Paneli</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<header class="ust">
+  <div class="marka"><span class="logo">AF<span class="i"><span class="nokta"></span></span></span><span class="etiket">SINIF</span>
+    <div><b id="sunucuAd">afi sınıf</b><small id="altBilgi"></small></div></div>
+  <nav class="sekmeler" id="sekmeler" hidden>
+    <button data-sekme="sinif" aria-current="true">Sınıf</button>
+    <button data-sekme="ogretmenler" data-admin>Öğretmenler</button>
+    <button data-sekme="guncelleme" data-admin>Güncelleme</button>
+    <button data-sekme="ayarlar">Ayarlar</button>
+  </nav>
+  <div class="kullanici" id="kullaniciKutu" hidden><span id="kullaniciAd"></span><button class="ince" id="cikisBtn">Çıkış</button></div>
+</header>
+
+<main id="ana">
+  <!-- ilk kurulum -->
+  <section class="kart dar" id="kurulumKutu" hidden>
+    <h1>Hoş geldiniz!</h1>
+    <p>afi sınıf sunucusu ilk kez açıldı. Önce bir <b>admin</b> hesabı oluşturun. Admin, öğretmen hesaplarını açar ve güncellemeleri yapar.</p>
+    <p class="uyari" id="kurulumUzak" hidden>İlk admin hesabı yalnızca sunucunun çalıştığı bilgisayardan oluşturulabilir. Bu sayfayı o bilgisayarda <b>http://localhost:8000/panel/</b> adresinden açın.</p>
+    <form id="kurulumForm" class="form">
+      <label>Kullanıcı adı<input name="kullanici" required autocomplete="username" placeholder="ornek: aydin"></label>
+      <label>Adınız<input name="ad" required placeholder="Aydın İncekara"></label>
+      <label>Parola (en az 6 karakter)<input name="sifre" type="password" required minlength="6" autocomplete="new-password"></label>
+      <button class="ana">Admin hesabını oluştur</button>
+      <p class="hata" hidden></p>
+    </form>
+  </section>
+
+  <!-- giriş -->
+  <section class="kart dar" id="girisKutu" hidden>
+    <h1>Öğretmen girişi</h1>
+    <form id="girisForm" class="form">
+      <label>Kullanıcı adı<input name="kullanici" required autocomplete="username"></label>
+      <label>Parola<input name="sifre" type="password" required autocomplete="current-password"></label>
+      <button class="ana">Giriş</button>
+      <p class="hata" hidden></p>
+    </form>
+  </section>
+
+  <!-- sınıf -->
+  <section id="sekme-sinif" class="sekme" hidden>
+    <div class="arac">
+      <select id="uygSec" hidden></select>
+      <input id="ara" type="search" placeholder="Öğrenci ara...">
+      <label class="kutu"><input type="checkbox" id="sadeceCevrimici" checked> Sadece şu an bağlı olanlar</label>
+      <span class="bosluk"></span>
+      <button id="herkeseMesajBtn">✉ Herkese mesaj</button>
+      <a class="dugme" id="csvBtn" href="#">⬇ Excel (CSV)</a>
+    </div>
+    <div class="ozet" id="ozet"></div>
+    <div class="izgara" id="ogrenciler"></div>
+    <p class="bos" id="bosMesaj" hidden></p>
+  </section>
+
+  <!-- öğretmenler -->
+  <section id="sekme-ogretmenler" class="sekme" hidden>
+    <div class="ikili">
+      <div class="kart">
+        <h2>Öğretmenler</h2>
+        <table class="tablo" id="kullaniciTablo"><thead><tr><th>Kullanıcı</th><th>Ad</th><th>Rol</th><th>Ağ aralıkları</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="kart">
+        <h2 id="kFormBaslik">Yeni öğretmen</h2>
+        <form id="kullaniciForm" class="form">
+          <input type="hidden" name="id">
+          <label>Kullanıcı adı<input name="kullanici" required></label>
+          <label>Adı<input name="ad" required></label>
+          <label>Parola <small id="parolaNot">(en az 6 karakter)</small><input name="sifre" type="password" minlength="6" autocomplete="new-password"></label>
+          <label>Rol<select name="rol"><option value="ogretmen">Öğretmen</option><option value="admin">Admin</option></select></label>
+          <label>Ağ aralıkları <small>(her satıra bir tane)</small><textarea name="araliklar" rows="3" placeholder="192.168.1.0/24&#10;192.168.137.2-192.168.137.40"></textarea></label>
+          <p class="not">Öğretmen yalnızca bu aralıklardaki bilgisayarlardan bağlanan öğrencileri görür. Boş bırakılırsa herkesi görür. Bu bilgisayarın adresi: <b id="buIp"></b></p>
+          <div class="sira"><button class="ana">Kaydet</button><button type="button" class="ince" id="kFormIptal" hidden>Vazgeç</button></div>
+          <p class="hata" hidden></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- güncelleme -->
+  <section id="sekme-guncelleme" class="sekme" hidden>
+    <div class="ikili">
+      <div class="kart">
+        <h2>Kurulu uygulamalar</h2>
+        <div id="yerelSurumler"></div>
+        <h3>İnternetsiz güncelleme</h3>
+        <p class="not">İnternet yoksa paketi (afi-kod-x.y.zip) başka bir bilgisayarda https://aydinincekara.github.io/isikcirobot_offline adresinden indirip USB ile getirin ve buradan yükleyin.</p>
+        <input type="file" id="paketDosya" accept=".zip"> <button id="paketYukleBtn">Paketi yükle</button>
+        <p class="durum" id="yukleDurum"></p>
+      </div>
+      <div class="kart">
+        <h2>İnternetten güncelle</h2>
+        <p class="not">Kaynak: <code id="gAdres"></code></p>
+        <button class="ana" id="denetleBtn">Güncellemeleri denetle</button>
+        <div id="uzakSurumler"></div>
+        <p class="durum" id="gDurum"></p>
+        <p class="not">Güncelleme kurulunca öğrencilere "Yeni sürüm hazır" bildirimi gider; öğrenci istemcileri yeni paketi bu sunucudan kendileri alır.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ayarlar -->
+  <section id="sekme-ayarlar" class="sekme" hidden>
+    <div class="ikili">
+      <div class="kart">
+        <h2>Öğrenciler nasıl bağlanır?</h2>
+        <p>Öğrenciler tarayıcıda şu adreslerden birini açar:</p>
+        <ul id="adresListe" class="adresler"></ul>
+        <p class="not">Bilgisayarın IP adresi değişebilir; bilgisayar adıyla yazılan adres (en alttaki) değişmez. Öğrenci istemcisi (afi-istemci) kuruluysa sunucuyu kendisi bulur.</p>
+        <h3>Parolamı değiştir</h3>
+        <form id="sifreForm" class="form yatay">
+          <input name="eski" type="password" placeholder="Eski parola" required autocomplete="current-password">
+          <input name="yeni" type="password" placeholder="Yeni parola" minlength="6" required autocomplete="new-password">
+          <button>Değiştir</button>
+          <p class="hata" hidden></p>
+        </form>
+      </div>
+      <div class="kart" data-admin>
+        <h2>Sunucu</h2>
+        <form id="ayarForm" class="form">
+          <label>Sunucunun adı<input name="sunucu_adi"></label>
+          <label>Güncelleme adresi<input name="guncelleme_adresi"></label>
+          <button>Kaydet</button>
+          <p class="hata" hidden></p>
+        </form>
+        <p class="not">Veri klasörü: <code id="veriKlasor"></code></p>
+        <h3>Yedek</h3>
+        <p><a class="dugme" href="/api/v1/yedek">⬇ Veritabanı yedeğini indir</a></p>
+        <h3>Dönem sonu</h3>
+        <p class="not">Bütün öğrenci kayıtlarını, ilerlemeleri ve mesajları siler. Öğretmen hesapları kalır. Önce yedek alın.</p>
+        <button class="tehlike" id="temizleBtn">Öğrenci verilerini sil</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- öğrenci ayrıntısı -->
+<aside class="cekmece" id="cekmece" hidden>
+  <div class="cekmece-ic">
+    <div class="sira bas"><h2 id="dAd"></h2><button class="ince" id="dKapat">Kapat ✕</button></div>
+    <div id="dBilgi" class="not"></div>
+    <div class="sira"><input id="dMesaj" placeholder="Bu öğrenciye mesaj..."><button id="dMesajBtn">Gönder</button></div>
+    <h3>Bölümler</h3><div id="dBolumler"></div>
+    <h3>Şu anki çalışması <small id="dAnlikZaman"></small></h3>
+    <div id="dBloklar" class="bloklar"></div>
+    <pre id="dKod" class="kod"></pre>
+    <h3>Son olaylar</h3><ul id="dOlaylar" class="olaylar"></ul>
+  </div>
+</aside>
+
+<div class="modal" id="mesajModal" hidden>
+  <form class="kart dar" id="mesajForm">
+    <h2>Herkese mesaj</h2>
+    <p class="not">Mesaj, gördüğünüz öğrencilerin ekranında birkaç saniye içinde çıkar.</p>
+    <textarea name="metin" rows="3" maxlength="500" required placeholder="Örnek: 10 dakika sonra mola veriyoruz."></textarea>
+    <div class="sira"><button type="button" class="ince" data-kapat>Vazgeç</button><button class="ana">Gönder</button></div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script src="panel.js"></script>
+</body>
+</html>

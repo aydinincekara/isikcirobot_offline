@@ -1,0 +1,19 @@
+{
+ "platform": {
+  "surum": "1.0.0"
+ },
+ "uygulamalar": {
+  "afi-kod": {
+   "ad": "AFİ KOD",
+   "surum": "2.3",
+   "zip": "paketler/afi-kod-2.3.zip",
+   "sha256": "393cb06816925b6c2ba125724d6c56b5e33776324e1f0831f0fc38e3d67eb1ba",
+   "boyut": 623256,
+   "tarih": "2026-10-23",
+   "notlar": {
+    "tr": "AFİ KOD 2.3: sınıf modu (öğretmen sunucusu ve öğrenci istemcisiyle çalışır)",
+    "en": "AFI CODE 2.3: classroom mode (works with the teacher server and student client)"
+   }
+  }
+ }
+}

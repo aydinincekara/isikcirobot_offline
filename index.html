@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AFİ Sınıf</title>
+<meta name="description" content="AFİ KOD sınıf sürümü: öğretmen bilgisayarında sunucu, öğrenci bilgisayarlarında istemci.">
+<link rel="icon" href="tools/ikon/afi-istemci.png">
+<style>
+:root{--bg:#EEF2F6;--panel:#FFFFFF;--panel-2:#F5F7FA;--line:#D6DDE6;--ink:#1A2230;--ink-2:#4A5568;--ink-3:#6F7B8E;--accent:#2563C9;--accent-soft:#E2ECFB;--ok:#1F8A5B;--ok-soft:#DDF3E8;--lamp:#F5A524;--lamp-soft:#FFF1D2;
+  --f:"Segoe UI","Nunito",system-ui,-apple-system,sans-serif;--mono:Consolas,ui-monospace,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F151E;--panel:#171F2B;--panel-2:#1D2735;--line:#2B3747;--ink:#E7EDF5;--ink-2:#B3BFCE;--ink-3:#8E9BB0;--accent:#6EA2F7;--accent-soft:#1E2E48;--ok:#4CC38A;--ok-soft:#173528;--lamp:#FFB938;--lamp-soft:#3A2F17;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.55}
+a{color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:24px 16px 60px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.logo{font-weight:900;font-size:2.2rem;letter-spacing:.06em;color:var(--accent);line-height:1;display:inline-flex;align-items:flex-end;padding-top:.3em}
+.logo .i{position:relative;display:inline-block;width:.19em;height:.71em;margin-left:.07em;border-radius:.05em;background:var(--accent);margin-bottom:.12em}
+.logo .nokta{position:absolute;left:50%;top:-.36em;width:.27em;height:.27em;margin-left:-.135em;border-radius:50%;background:var(--lamp)}
+.etiket{background:var(--lamp);color:#1A2230;border-radius:7px;padding:3px 8px;font-weight:900;font-size:.8rem;letter-spacing:.12em;transform:rotate(-4deg)}
+h1{font-size:1.6rem;margin:18px 0 6px;line-height:1.25} h2{font-size:1.25rem;margin:0 0 10px} h3{font-size:1.02rem;margin:16px 0 6px}
+.giris{color:var(--ink-2);max-width:720px;margin:0 0 20px}
+.kart{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin:14px 0;min-width:0}
+.izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.indir{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--panel)}
+.indir img{width:48px;height:48px}
+.indir b{font-size:1.08rem}
+.indir small{color:var(--ink-3)}
+.dugme{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:auto;padding:10px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:800;text-decoration:none}
+.dugme.ince{background:transparent;color:var(--accent);border:1px solid var(--line)}
+ol,ul{padding-left:22px;margin:6px 0} li{margin:4px 0}
+code,kbd{font-family:var(--mono);font-size:.9em;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:1px 5px;overflow-wrap:anywhere}
+.not{background:var(--lamp-soft);border-radius:12px;padding:12px 14px;margin:12px 0}
+.ok{background:var(--ok-soft);border-radius:12px;padding:12px 14px;margin:12px 0}
+.surumler{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 0}
+.hap{border-radius:999px;padding:3px 10px;font-size:.85rem;font-weight:800;background:var(--accent-soft);color:var(--accent)}
+.sema{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;text-align:center;font-weight:700;font-size:.92rem}
+.sema div{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--panel-2)}
+.sema span{color:var(--ink-3)}
+@media (max-width:620px){.sema{grid-template-columns:1fr}.sema span{transform:rotate(90deg)}}
+details{border-top:1px solid var(--line);padding:10px 0} details:first-of-type{border-top:0} summary{cursor:pointer;font-weight:800}
+footer{color:var(--ink-3);font-size:.88rem;margin-top:30px}
+</style>
+</head>
+<body>
+<main>
+  <header><span class="logo" aria-label="AFİ">AF<span class="i"><span class="nokta"></span></span></span><span class="etiket">SINIF</span></header>
+  <h1>AFİ KOD sınıf sürümü</h1>
+  <p class="giris">Öğretmen bilgisayarında küçük bir sunucu çalışır; öğretmen öğrencileri canlı izler, mesaj gönderir, güncellemeleri tek tuşla yapar. Öğrenci bilgisayarlarına kurulan istemci ağ olsa da olmasa da çalışır, öğretmen sunucusunu kendisi bulur. Python kurmak gerekmez.</p>
+  <div class="surumler" id="surumler"></div>
+
+  <section class="kart">
+    <h2>İndir</h2>
+    <div class="izgara">
+      <div class="indir"><img src="tools/ikon/afi-sunucu.png" alt=""><b>afi-sunucu.exe</b><span>Öğretmen bilgisayarı için. Panel, canlı takip, güncelleme.</span><small>Windows 8.1, 10, 11 · kurulum yok, çift tıkla çalışır</small>
+        <a class="dugme" href="https://github.com/aydinincekara/isikcirobot_offline/releases/latest/download/afi-sunucu.exe">⬇ Öğretmen programı</a></div>
+      <div class="indir"><img src="tools/ikon/afi-istemci.png" alt=""><b>afi-istemci.exe</b><span>Öğrenci bilgisayarları için. Ağ yokken de çalışır.</span><small>Yönetici izni istemez · ilk açılışta kendini kurar</small>
+        <a class="dugme" href="https://github.com/aydinincekara/isikcirobot_offline/releases/latest/download/afi-istemci.exe">⬇ Öğrenci programı</a></div>
+      <div class="indir"><img src="tools/ikon/afi-istemci.png" alt="" style="filter:grayscale(1)"><b>Güncelleme paketi</b><span>İnterneti olmayan sunucuya USB ile güncelleme getirmek için.</span><small id="paketBilgi">afi-kod paketi (.zip)</small>
+        <a class="dugme ince" id="paketLink" href="version.json">⬇ Paket</a></div>
+    </div>
+    <p><small>Tüm sürümler: <a href="https://github.com/aydinincekara/isikcirobot_offline/releases">Sürümler sayfası</a> · Kaynak kod: <a href="https://github.com/aydinincekara/isikcirobot_offline">GitHub</a> · Uygulamanın internetteki hali: <a href="https://aydinincekara.github.io/isikcirobot_v1/">isikcirobot_v1</a></small></p>
+  </section>
+
+  <section class="kart">
+    <h2>Nasıl çalışır?</h2>
+    <div class="sema">
+      <div>Öğrenci bilgisayarı<br><small>AFİ KOD (istemci ya da tarayıcı)</small></div><span>⇄ okul ağı ⇄</span><div>Öğretmen bilgisayarı<br><small>afi-sunucu · panel</small></div>
+    </div>
+    <ul>
+      <li>İlerleme öğretmen bilgisayarında tutulur. Öğrenci hangi bilgisayara oturursa otursun <b>adını ve robotunu</b> seçince kaldığı yerden devam eder.</li>
+      <li>Öğretmen panelinde her öğrencinin hangi adımda olduğu, yıldızları, <b>şu anki blokları</b> ve son olayları görünür.</li>
+      <li>Admin öğretmen hesapları açar; her öğretmen yalnızca kendi <b>ağ aralığındaki</b> öğrencileri görür (ör. <code>192.168.1.0/24</code>).</li>
+      <li>"Güncellemeleri denetle" bu sayfadaki paketi indirir, doğrular ve kurar; öğrencilere "Yeni sürüm hazır" bildirimi gider. Sorun olursa eski sürüme tek tuşla dönülür.</li>
+    </ul>
+  </section>
+
+  <section class="kart">
+    <h2>1. Öğretmen bilgisayarı</h2>
+    <ol>
+      <li><b>afi-sunucu.exe</b> dosyasını kalıcı bir klasöre koyun, örneğin <code>C:\afi-sinif</code>. Veriler yanında açılan <code>afi-sunucu-veri</code> klasöründe tutulur (yedek için bu klasörü kopyalamak yeter).</li>
+      <li>Çift tıklayın. Windows <i>"Bilgisayarınız korundu"</i> derse <b>Ek bilgi → Yine de çalıştır</b>.</li>
+      <li>Güvenlik duvarı sorarsa <b>Özel ağlar</b> işaretliyken <b>Erişime izin ver</b> deyin. Bu adım bir kez yönetici parolası isteyebilir; sonra gerekmez.</li>
+      <li>Siyah pencerede öğrencilerin açacağı adresler yazar ve panel tarayıcıda açılır. İlk açılışta <b>admin hesabını</b> oluşturun.</li>
+      <li>Ders boyunca siyah pencere açık kalsın; kapatınca sunucu durur.</li>
+    </ol>
+    <div class="not">Okul ağı Windows'ta <b>Ortak ağ</b> olarak görünüyorsa öğrenciler bağlanamayabilir: Ayarlar → Ağ ve İnternet → bağlı ağ → <b>Özel</b> seçin.</div>
+  </section>
+
+  <section class="kart">
+    <h2>2. Öğrenci bilgisayarları</h2>
+    <h3>Önerilen: istemciyi kurmak</h3>
+    <ol>
+      <li><b>afi-istemci.exe</b> dosyasını USB'den her öğrenci bilgisayarında <b>bir kez</b> çift tıklayın (yönetici izni gerekmez).</li>
+      <li>Program kendini kurar, masaüstüne <b>AFİ KOD</b> kısayolu koyar ve Windows açılışında arka planda başlar. AFİ KOD tarayıcıda açılır.</li>
+      <li>Öğretmen sunucusunu kendisi bulur (son adres → bilgisayar adı → ağ taraması). Bulamazsa üst şeritteki <b>Sınıf bağlantısı yok</b> etiketine tıklayıp adresi elle yazın, örneğin <code>192.168.1.20:8000</code>.</li>
+    </ol>
+    <div class="ok">Ağ koparsa ya da öğretmen bilgisayarı kapalıysa öğrenci çalışmaya devam eder; kayıtlar bekletilir ve bağlantı gelince gönderilir. Yeni AFİ KOD sürümleri sunucudan kendiliğinden gelir.</div>
+    <h3>Kurulumsuz: tarayıcıdan</h3>
+    <p>Öğrenci tarayıcıda <code>http://ÖĞRETMEN-PC:8000</code> adresini açar (<code>ÖĞRETMEN-PC</code> yerine öğretmen bilgisayarının adı ya da siyah pencerede yazan IP adresi). Bu yolda ağ koparsa açık sayfa çalışır ama yeniden açılamaz.</p>
+    <div class="not">Windows <b>Mobil etkin nokta</b> (192.168.137.x) en fazla 8 cihaz bağlar. Kalabalık sınıfta okulun ağını ya da ayrı bir Wi-Fi modem kullanın.</div>
+  </section>
+
+  <section class="kart">
+    <h2>Sık sorulanlar</h2>
+    <details><summary>Öğretmen bilgisayarının IP adresi değişirse?</summary><p>İstemci sunucuyu bilgisayar adından ve ağ taramasıyla yeniden bulur. Tarayıcıdan bağlananlar için siyah pencerenin en altında bilgisayar adıyla yazılan adres değişmez.</p></details>
+    <details><summary>8000 portu kullanımda diyor.</summary><p>Sunucu zaten açık olabilir. Başka port için Komut İstemi'nde (yönetici gerekmez) program klasöründe: <code>afi-sunucu.exe --port 8001</code></p></details>
+    <details><summary>İstemciyi kaldırmak</summary><p>Masaüstündeki <b>AFİ KOD</b> kısayolunu ve Başlangıç klasöründeki (<kbd>Win</kbd>+<kbd>R</kbd> → <code>shell:startup</code>) <b>afi istemci</b> kısayolunu silin, bilgisayarı yeniden başlatın, sonra <code>%LOCALAPPDATA%\afi-sinif</code> klasörünü silin.</p></details>
+    <details><summary>Python ile çalıştırmak (exe yerine)</summary><p>Python 3.8 veya yenisi gerekir. Kaynak kodu <a href="https://github.com/aydinincekara/isikcirobot_offline/archive/refs/heads/main.zip">zip olarak indirip</a> ayıklayın. Klasörde Komut İstemi açıp komutları <b>teker teker</b> yazın: <code>python --version</code> (sürümü gösterir; görünmezse <code>py --version</code> deneyin), ardından öğretmen bilgisayarında <code>python afi-sunucu.py</code>, öğrenci bilgisayarında <code>python afi-istemci.py</code>. Yönetici izni gerekmez.</p></details>
+    <details><summary>Başka dersler için de kullanılabilir mi?</summary><p>Evet. Sunucu ve istemci "uygulama paketi" mantığıyla çalışır: her ders ayrı bir paket (zip + <code>afi-paket.json</code>) olarak eklenir ve aynı panelden izlenir.</p></details>
+  </section>
+  <footer>afi sınıf · Aydın İncekara · AFİ KOD Blockly (Apache 2.0) üzerine kuruludur.</footer>
+</main>
+<script>
+fetch('version.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) {
+  var k = document.getElementById('surumler'), h = '';
+  if (v.platform) h += '<span class="hap">platform ' + v.platform.surum + '</span>';
+  Object.keys(v.uygulamalar || {}).forEach(function (a) { var u = v.uygulamalar[a]; h += '<span class="hap">' + u.ad + ' ' + u.surum + '</span>'; });
+  k.innerHTML = h;
+  var u = (v.uygulamalar || {})['afi-kod'];
+  if (u) { document.getElementById('paketLink').href = u.zip; document.getElementById('paketBilgi').textContent = 'afi-kod-' + u.surum + '.zip · ' + Math.round(u.boyut / 1024) + ' KB'; }
+}).catch(function () {});
+</script>
+</body>
+</html>
