@@ -1,18 +1,18 @@
 {
  "platform": {
-  "surum": "1.2.0"
+  "surum": "1.3.0"
  },
  "uygulamalar": {
   "afi-kod": {
    "ad": "AFİ KOD",
-   "surum": "2.4",
-   "zip": "paketler/afi-kod-2.4.zip",
-   "sha256": "725c82f489a421fe62cd59bf2856dddccf9767546de1f530cb8f96bca80f36dc",
-   "boyut": 624654,
-   "tarih": "2026-10-23",
+   "surum": "2.5",
+   "zip": "paketler/afi-kod-2.5.zip",
+   "sha256": "e7b716d1fe490fa1305839d217baba168e6ea9b8320977598ab05b495bb5959a",
+   "boyut": 817505,
+   "tarih": "2026-11-25",
    "notlar": {
-    "tr": "AFİ KOD 2.4: sınıfta öğretmen paneline dönüş düğmesi; öğretmen öğrenci listesine girmez",
-    "en": "AFI CODE 2.4: teacher panel button in class mode"
+    "tr": "AFİ KOD 2.5: öğrenci numarasıyla giriş, tek tuşla tam varsayılan düzen ve öğrenciye özel düzen, Baştan başla, saklanmayan misafir çalışması, yardım iste, öğretmenden ses ve temizlik komutları, kaymayan ekran",
+    "en": "AFI CODE 2.5: student numbers, one-click full layout reset and per-student layout, start over, guest work not kept, help requests, teacher sound and cleanup commands, stable screen"
    }
   }
  }

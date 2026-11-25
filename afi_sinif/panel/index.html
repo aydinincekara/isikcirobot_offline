@@ -12,6 +12,8 @@
     <div><b id="sunucuAd">afi sınıf</b><small id="altBilgi"></small></div></div>
   <nav class="sekmeler" id="sekmeler" hidden>
     <button data-sekme="sinif" aria-current="true">Sınıf</button>
+    <button data-sekme="ogrenciler">Öğrenciler</button>
+    <button data-sekme="rapor">Rapor</button>
     <button data-sekme="ogretmenler" data-admin>Öğretmenler</button>
     <button data-sekme="guncelleme" data-admin>Güncelleme</button>
     <button data-sekme="ayarlar">Ayarlar</button>
@@ -45,19 +47,114 @@
     </form>
   </section>
 
-  <!-- sınıf -->
+  <!-- sınıf: canlı izleme -->
   <section id="sekme-sinif" class="sekme" hidden>
     <div class="arac">
       <select id="uygSec" hidden></select>
-      <input id="ara" type="search" placeholder="Öğrenci ara...">
-      <label class="kutu"><input type="checkbox" id="sadeceCevrimici" checked> Sadece şu an bağlı olanlar</label>
+      <select class="sinifSec" data-sinifsec title="Sınıf / grup"></select>
+      <input id="ara" type="search" placeholder="Öğrenci, numara ya da bilgisayar ara...">
+      <div class="secmeli" id="gosterSec" role="group" aria-label="Gösterilecek öğrenciler">
+        <button data-goster="hepsi" aria-pressed="true">Hepsi</button>
+        <button data-goster="bagli" aria-pressed="false">Bağlı olanlar</button>
+        <button data-goster="yardim" aria-pressed="false">Yardım gerekenler</button>
+      </div>
       <span class="bosluk"></span>
-      <button id="herkeseMesajBtn">✉ Herkese mesaj</button>
-      <a class="dugme" id="csvBtn" href="#">⬇ Excel (CSV)</a>
+      <button id="sesBtn" title="afi kod seslerini (robot sesleri, sesli okuma) öğrenci bilgisayarlarında aç ya da kapat"></button>
+      <div class="menu-kap">
+        <button id="pcMenuBtn" aria-haspopup="true" aria-expanded="false">🖥 Bilgisayarlar ▾</button>
+        <div class="menu" id="pcMenu" hidden role="menu">
+          <button role="menuitem" data-komut="duzen-sifirla"><b>↺ Ekran düzenini sıfırla</b><small>Öğrencilerin değiştirdiği sütun genişliklerini, yazı boyunu, yakınlaştırmayı varsayılana döndürür.</small></button>
+          <button role="menuitem" data-komut="misafir-temizle"><b>🧹 Misafir çalışmalarını temizle</b><small>Misafir olarak çalışılmış bilgisayarlardaki bloklar ve yıldızlar silinir.</small></button>
+          <button role="menuitem" data-komut="liste-temizle"><b>🗑 Bilgisayarlardaki öğrenci listesini temizle</b><small>"Kim kodluyor?" ekranındaki adlar silinir. Öğrenci kayıtları bu sunucuda kalır; öğrenciler numarasıyla ya da adıyla yeniden girer.</small></button>
+        </div>
+      </div>
+      <button id="herkeseMesajBtn">✉ Mesaj gönder</button>
     </div>
     <div class="ozet" id="ozet"></div>
     <div class="izgara" id="ogrenciler"></div>
     <p class="bos" id="bosMesaj" hidden></p>
+  </section>
+
+  <!-- öğrenciler: sınıf listesi, numaralar -->
+  <section id="sekme-ogrenciler" class="sekme" hidden>
+    <div class="ikili genis">
+      <div class="kart">
+        <div class="sira bas">
+          <h2>Sınıf listesi</h2>
+          <div class="sira">
+            <select class="sinifSec" data-sinifsec title="Sınıf / grup"></select>
+            <input id="listeAra" type="search" placeholder="Ad ya da numara ara...">
+            <button id="kartBtn" title="Her öğrenci için adı ve numarası yazan kesilebilir kartlar">🖨 Numara kartlarını yazdır</button>
+            <a class="dugme" href="/api/v1/liste.csv">⬇ Liste (CSV)</a>
+          </div>
+        </div>
+        <p class="not">Her öğrencinin bir <b>numarası</b> vardır. Öğrenci hangi bilgisayara oturursa otursun numarasını yazarak girer ve kaldığı yerden devam eder.</p>
+        <div class="tablo-kutu"><table class="tablo" id="listeTablo">
+          <thead><tr><th>Numara</th><th>Ad</th><th>Sınıf</th><th class="sayi">Biten adım</th><th class="sayi">Yıldız</th><th>Son görülme</th><th>Not</th><th></th></tr></thead><tbody id="listeGovde"></tbody></table></div>
+        <p class="bos" id="listeBos" hidden>Listede henüz öğrenci yok. Sağdaki kutudan ekleyin.</p>
+        <div id="numarasizKutu" hidden>
+          <div class="sira bas"><h3>Numarasız öğrenciler <small class="not">(adını kendisi yazarak girenler)</small></h3><button id="hepsineNoBtn">Hepsine numara ver</button></div>
+          <p class="not">Bu öğrenciler yalnızca adlarını yazdıkları bilgisayarda tanınır. <b>Numara ver</b> derseniz ilerlemeleri korunur, numaraları kendi ekranlarında çıkar ve artık her bilgisayardan girebilirler. Aynı kişi listede zaten varsa <b>Birleştir</b>'i kullanın.</p>
+          <div class="tablo-kutu"><table class="tablo" id="numarasizTablo"><thead><tr><th>Ad</th><th>Bilgisayar</th><th class="sayi">Biten adım</th><th class="sayi">Yıldız</th><th>Son görülme</th><th></th></tr></thead><tbody id="numarasizGovde"></tbody></table></div>
+        </div>
+      </div>
+      <div class="sutun">
+        <div class="kart">
+          <h2>Öğrenci ekle</h2>
+          <form id="ekleForm" class="form">
+            <label>Adı soyadı<input name="ad" required maxlength="40" placeholder="Elif Yılmaz"></label>
+            <label>Sınıf / grup<input name="sinif" list="sinifListe" maxlength="40" placeholder="Cumartesi sabah"></label>
+            <label>Numara <small>(boş bırakırsanız 4 haneli bir numara verilir)</small><input name="no" inputmode="numeric" maxlength="8" placeholder="otomatik"></label>
+            <button class="ana">Ekle</button>
+            <p class="hata" hidden></p>
+          </form>
+          <datalist id="sinifListe"></datalist>
+          <h3>Toplu ekle</h3>
+          <form id="topluForm" class="form">
+            <label>Her satıra bir öğrenci <small>(Excel'den yapıştırabilirsiniz; "numara;ad" biçimi de olur)</small>
+              <textarea name="metin" rows="6" required placeholder="Ayşe Kaya&#10;Mehmet Öz&#10;105;Zeynep Ak"></textarea></label>
+            <label>Sınıf / grup<input name="sinif" list="sinifListe" maxlength="40" placeholder="Pazar sabah"></label>
+            <button>Listeyi ekle</button>
+            <p class="hata" hidden></p>
+          </form>
+        </div>
+        <div class="kart">
+          <h2>Öğrenciler nasıl girsin?</h2>
+          <label class="secenek"><input type="radio" name="kip" value="serbest"> <span><b>Serbest</b><small>Numarası olan numarasıyla girer; olmayan adını yazarak girebilir. Yeni başlayan sınıflar için.</small></span></label>
+          <label class="secenek"><input type="radio" name="kip" value="numara"> <span><b>Yalnızca numarayla</b><small>Ad yazma kutusu ve bilgisayardaki ad listesi kapanır. Herkes kendi numarasıyla girer; kayıtlar karışmaz. Liste tamamlanınca bunu seçin.</small></span></label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- rapor: geri bildirim -->
+  <section id="sekme-rapor" class="sekme" hidden>
+    <div class="arac">
+      <select class="sinifSec" data-sinifsec title="Sınıf / grup"></select>
+      <span class="bosluk"></span>
+      <a class="dugme" id="csvBtn" href="#">⬇ Öğrenci raporu (Excel/CSV)</a>
+      <a class="dugme" id="devamBtn" href="#">⬇ Yoklama (Excel/CSV)</a>
+    </div>
+    <div class="ozet" id="raporOzet"></div>
+    <div class="kart">
+      <h2>Öğrenciler</h2>
+      <p class="not">Sütun başlığına tıklayınca o sütuna göre sıralanır. Satıra tıklayınca öğrencinin ayrıntısı açılır.</p>
+      <div class="tablo-kutu"><table class="tablo sirali" id="raporTablo"><thead><tr>
+        <th data-sira="no">Numara</th><th data-sira="ad">Ad</th><th data-sira="sinif">Sınıf</th><th class="sayi" data-sira="biten">Biten adım</th><th class="sayi" data-sira="yildiz">Yıldız</th>
+        <th class="sayi" data-sira="sure">Toplam süre</th><th class="sayi" data-sira="gun">Geldiği gün</th><th class="sayi" data-sira="basari">Başarılı deneme</th><th class="sayi" data-sira="hata">Hatalı deneme</th>
+        <th class="sayi" data-sira="bugun">Bugün</th><th data-sira="son">Son görülme</th></tr></thead><tbody id="raporGovde"></tbody></table></div>
+    </div>
+    <div class="ikili" style="margin-top:16px">
+      <div class="kart">
+        <h2>En çok zorlanılan adımlar</h2>
+        <p class="not">Öğrenci başına en çok hatalı deneme yapılan adımlar. Bu adımları sınıfta birlikte çözmek iyi olur.</p>
+        <div class="tablo-kutu"><table class="tablo" id="zorTablo"><thead><tr><th>Adım</th><th class="sayi">Deneyen</th><th class="sayi">Başaran</th><th class="sayi">Hatalı deneme</th><th class="sayi">Öğrenci başına</th></tr></thead><tbody id="zorGovde"></tbody></table></div>
+      </div>
+      <div class="kart">
+        <h2>Gün gün katılım</h2>
+        <div class="tablo-kutu"><table class="tablo" id="gunTablo"><thead><tr><th>Tarih</th><th class="sayi">Gelen öğrenci</th><th class="sayi">Toplam çalışma</th><th class="sayi">Başarılı</th><th class="sayi">Hatalı</th></tr></thead><tbody id="gunGovde"></tbody></table></div>
+      </div>
+    </div>
   </section>
 
   <!-- öğretmenler -->
@@ -143,8 +240,9 @@
         <p class="not">Veri klasörü: <code id="veriKlasor"></code></p>
         <h3>Yedek</h3>
         <p><a class="dugme" href="/api/v1/yedek">⬇ Veritabanı yedeğini indir</a></p>
+        <p class="not">Sunucu her gün kendiliğinden bir yedek alır ve son 14 günü kayıt klasöründeki <code>yedek</code> klasöründe saklar.</p>
         <h3>Dönem sonu</h3>
-        <p class="not">Bütün öğrenci kayıtlarını, ilerlemeleri ve mesajları siler. Öğretmen hesapları kalır. Önce yedek alın.</p>
+        <p class="not">Bütün öğrencilerin ilerlemelerini ve mesajları siler. Öğretmen hesapları kalır; sınıf listesini (numaraları) saklamak ya da silmek size sorulur. Silmeden önce yedek kendiliğinden alınır.</p>
         <button class="tehlike" id="temizleBtn">Öğrenci verilerini sil</button>
       </div>
     </div>
@@ -156,8 +254,14 @@
   <div class="cekmece-ic">
     <div class="sira bas"><h2 id="dAd"></h2><button class="ince" id="dKapat">Kapat ✕</button></div>
     <div id="dBilgi" class="not"></div>
+    <div class="sira" id="dIslem"></div>
+    <div id="dUyari"></div>
+    <div class="ozet kucuk" id="dOzet"></div>
     <div class="sira"><input id="dMesaj" placeholder="Bu öğrenciye mesaj..."><button id="dMesajBtn">Gönder</button></div>
     <h3>Bölümler</h3><div id="dBolumler"></div>
+    <h3>En çok zorlandığı adımlar</h3><div id="dZor"></div>
+    <h3>En sık aldığı hatalar</h3><ul id="dHatalar" class="olaylar"></ul>
+    <h3>Geldiği günler</h3><div id="dGunler"></div>
     <h3>Şu anki çalışması <small id="dAnlikZaman"></small></h3>
     <div id="dBloklar" class="bloklar"></div>
     <pre id="dKod" class="kod"></pre>
@@ -167,12 +271,41 @@
 
 <div class="modal" id="mesajModal" hidden>
   <form class="kart dar" id="mesajForm">
-    <h2>Herkese mesaj</h2>
-    <p class="not">Mesaj, gördüğünüz öğrencilerin ekranında birkaç saniye içinde çıkar.</p>
+    <h2>Mesaj gönder</h2>
+    <label class="form">Kime<select name="hedef" id="mesajHedef"></select></label>
+    <p class="not">Mesaj, öğrencilerin ekranında birkaç saniye içinde çıkar.</p>
     <textarea name="metin" rows="3" maxlength="500" required placeholder="Örnek: 10 dakika sonra mola veriyoruz."></textarea>
     <div class="sira"><button type="button" class="ince" data-kapat>Vazgeç</button><button class="ana">Gönder</button></div>
   </form>
 </div>
+
+<!-- öğrenci düzenleme -->
+<div class="modal" id="kayitModal" hidden>
+  <form class="kart dar form" id="kayitForm">
+    <h2>Öğrenciyi düzenle</h2>
+    <input type="hidden" name="id">
+    <label>Adı soyadı<input name="ad" required maxlength="40"></label>
+    <label>Sınıf / grup<input name="sinif" list="sinifListe" maxlength="40"></label>
+    <label>Numara<input name="no" inputmode="numeric" maxlength="8" required></label>
+    <label>Not <small>(yalnızca öğretmen görür)</small><input name="notu" maxlength="300"></label>
+    <p class="hata" hidden></p>
+    <div class="sira"><button type="button" class="ince" data-kapat>Vazgeç</button><button class="ana">Kaydet</button></div>
+  </form>
+</div>
+
+<!-- birleştirme -->
+<div class="modal" id="birModal" hidden>
+  <form class="kart dar form" id="birForm">
+    <h2>Öğrencileri birleştir</h2>
+    <p><b id="birKaynak"></b> adlı kaydın bütün yıldızları ve çalışmaları aşağıda seçtiğiniz öğrenciye eklenir; bu kayıt kaldırılır.</p>
+    <label>Hangi öğrenciyle birleşsin?<select name="hedef" required></select></label>
+    <p class="hata" hidden></p>
+    <div class="sira"><button type="button" class="ince" data-kapat>Vazgeç</button><button class="ana">Birleştir</button></div>
+  </form>
+</div>
+
+<!-- yazdırılacak numara kartları -->
+<div id="yazdir" aria-hidden="true"></div>
 
 <div class="toast" id="toast" hidden></div>
 <script src="panel.js"></script>

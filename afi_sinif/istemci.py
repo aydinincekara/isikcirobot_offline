@@ -20,6 +20,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.parse
 import webbrowser
 from http.server import ThreadingHTTPServer
@@ -42,6 +43,8 @@ class Istemci:
         self.paketler = ortak.PaketDeposu(os.path.join(veri_klasoru, "paketler"))
         self.ilerleme_klasor = os.path.join(veri_klasoru, "ilerleme")
         os.makedirs(self.ilerleme_klasor, exist_ok=True)
+        self.tanidik_yolu = os.path.join(veri_klasoru, "tanidik.json")      # numarayla girmiş öğrenciler: sunucu yokken de girebilsinler
+        self.tanidik = ortak.json_oku(self.tanidik_yolu, {}) or {}
         self.kuyruk_yolu = os.path.join(veri_klasoru, "kuyruk.json")
         self.kuyruk = ortak.json_oku(self.kuyruk_yolu, {}) or {}       # {"olaylar": [...], "kirli": {anahtar: kimlik}, "kimlik": [...]}
         for k, v in (("olaylar", []), ("kirli", {}), ("kimlik", []), ("anlik", {})):
@@ -87,6 +90,33 @@ class Istemci:
 
     def bagli(self):
         return bool(self.sunucu)
+
+    def _tanidik_yaz(self, kimlik):
+        """Sunucudan gelen öğrenci kimliğini (numara, ad, robot) bu bilgisayarda hatırlar."""
+        if not kimlik or not kimlik.get("no"):
+            return
+        with self.kilit:
+            for no in [n for n, k in self.tanidik.items() if k.get("kayit") == kimlik.get("kayit") and n != kimlik["no"]]:
+                self.tanidik.pop(no, None)          # numarası değişmişse eskisi unutulur
+            if self.tanidik.get(kimlik["no"]) == kimlik:
+                return
+            self.tanidik[kimlik["no"]] = dict(kimlik)
+            try:
+                ortak.json_yaz(self.tanidik_yolu, self.tanidik)
+            except OSError:
+                pass
+
+    def _yerel_tasi(self, uyg, eski, yeni, kimlik):
+        """Öğretmen numara verince bu bilgisayardaki kayıt da yeni kimliğe taşınır."""
+        if eski == yeni:
+            return
+        veri = self.yerel_ilerleme(uyg, eski)
+        if veri:
+            self.yerel_ilerleme_yaz(uyg, yeni, kimlik, ilerleme_birlestir(self.yerel_ilerleme(uyg, yeni), veri))
+            try:
+                os.remove(self._il_yolu(uyg, eski))
+            except OSError:
+                pass
 
     def kopar(self, neden=""):
         if self.sunucu:
@@ -186,6 +216,8 @@ class Istemci:
     def baglan(self, adres, bilgi):
         ilk = self.sunucu != adres
         self.sunucu, self.sunucu_bilgi, self.son_temas = adres, bilgi, simdi()
+        if bilgi.get("giris_kipi") and bilgi["giris_kipi"] != self.ayar.get("giris_kipi"):
+            self.ayar["giris_kipi"] = bilgi["giris_kipi"]
         self.durum_mesaj = "Sunucuya bağlı: " + (bilgi.get("ad") or adres)
         son = [adres] + [x for x in (self.ayar.get("son_adresler") or []) if x != adres]
         self.ayar["son_adresler"] = son[:5]
@@ -286,10 +318,12 @@ class Istemci:
         cihaz = dict(v.get("cihaz") or {})
         cihaz.update({"istemci": True, "ad": ortak.bilgisayar_adi(), "ip": self.lan_ip, "kullanici": ortak.windows_kullanici()})
         v["cihaz"] = cihaz
+        # Sunucu yokken biriken olaylar öğrenciye göre etiketlidir: aynı bilgisayara sonra oturan başka öğrencinin hesabına yazılmaz.
+        anahtar = ortak.ogrenci_anahtari(v.get("ogrenci") or {})
         with self.kilit:
-            eski_olaylar = self.kuyruk["olaylar"]
-            self.kuyruk["olaylar"] = []
-        v["olaylar"] = (eski_olaylar + list(v.get("olaylar") or []))[-60:]
+            eski_olaylar = [o for o in self.kuyruk["olaylar"] if o.get("_a", anahtar) == anahtar]
+            self.kuyruk["olaylar"] = [o for o in self.kuyruk["olaylar"] if o.get("_a", anahtar) != anahtar]
+        v["olaylar"] = (eski_olaylar + [dict(o, _a=anahtar) for o in (v.get("olaylar") or []) if isinstance(o, dict)])[-60:]
         try:
             c = self.gonder("nabiz", v)
             sunucudaki = c.get("surum")
@@ -297,6 +331,15 @@ class Istemci:
             c["mesajlar"] = [m for m in (c.get("mesajlar") or []) if m.get("tur") != "surum"]   # paket inince bildirim "surum" alanından gelir
             if sunucudaki and sunucudaki != c["surum"]:
                 self.uyandir.set()          # arka plan hemen indirsin
+            kimlik = c.get("kimlik")
+            if kimlik:
+                self._tanidik_yaz(kimlik)
+                ogr = v.get("ogrenci") or {}
+                if not ortak.kayit_no(ogr):                 # numarasız girmişti; öğretmen şimdi numara vermiş
+                    self._yerel_tasi(v.get("uygulama") or "afi-kod", ortak.ogrenci_anahtari(ogr), "#%d" % kimlik["kayit"], dict(ogr, kayit=kimlik["kayit"]))
+            if c.get("kip") and c["kip"] != self.ayar.get("giris_kipi"):
+                self.ayar["giris_kipi"] = c["kip"]
+                self.ayar_kaydet()
             if self.kuyruk["kirli"] or self.kuyruk["kimlik"] or self.kuyruk["anlik"]:
                 threading.Thread(target=self.esitle, daemon=True).start()
             return c
@@ -311,7 +354,7 @@ class Istemci:
     def ilerleme_yaz(self, v):
         uyg = str(v.get("uygulama") or "afi-kod")
         k = v.get("ogrenci") or {}
-        anahtar = ortak.anahtar_yap(k.get("ad"), k.get("robot"))
+        anahtar = ortak.ogrenci_anahtari(k)
         birlesik = ilerleme_birlestir(self.yerel_ilerleme(uyg, anahtar), v.get("veri") or {})
         self.yerel_ilerleme_yaz(uyg, anahtar, k, birlesik)
         try:
@@ -324,17 +367,63 @@ class Istemci:
             self.kuyruk_kaydet()
         return {"ok": True, "veri": birlesik}
 
-    def ilerleme_oku(self, uyg, ad, robot):
-        anahtar = ortak.anahtar_yap(ad, robot)
+    def ilerleme_oku(self, uyg, ogr, robot=None):
+        if not isinstance(ogr, dict):          # eski çağrı biçimi: (uygulama, ad, robot)
+            ogr = {"ad": ogr, "robot": robot or "afi"}
+        ogr = {k: v for k, v in ogr.items() if v not in (None, "")}
+        anahtar = ortak.ogrenci_anahtari(ogr)
         yerel = self.yerel_ilerleme(uyg, anahtar)
+        kimlik = None
         try:
-            c = self.gonder("ilerleme?" + urllib.parse.urlencode({"uygulama": uyg, "ad": ad, "robot": robot}), zaman=5)
+            c = self.gonder("ilerleme?" + urllib.parse.urlencode(dict(ogr, uygulama=uyg)), zaman=5)
+            kimlik = c.get("kimlik")
+            if kimlik and not ortak.kayit_no(ogr):
+                self._yerel_tasi(uyg, anahtar, "#%d" % kimlik["kayit"], dict(ogr, kayit=kimlik["kayit"]))
+                anahtar, ogr = "#%d" % kimlik["kayit"], dict(ogr, kayit=kimlik["kayit"])
+                yerel = self.yerel_ilerleme(uyg, anahtar)
             if c.get("veri"):
                 yerel = ilerleme_birlestir(yerel, c["veri"])
-                self.yerel_ilerleme_yaz(uyg, anahtar, {"ad": ad, "robot": robot}, yerel)
+                self.yerel_ilerleme_yaz(uyg, anahtar, ogr, yerel)
         except OSError:
             pass
-        return {"veri": yerel or None}
+        return {"veri": yerel or None, "kimlik": kimlik}
+
+    def cihaz(self, v):
+        """Öğrenci girmemişken (misafir) sunucuyla bağlantı: ses ayarı, herkese giden mesajlar ve komutlar."""
+        v = dict(v)
+        v["cihaz"] = {"istemci": True, "ad": ortak.bilgisayar_adi(), "ip": self.lan_ip}
+        try:
+            return self.gonder("cihaz", v, zaman=5)
+        except OSError:
+            return {"ok": True, "cevrimdisi": True, "mesajlar": []}
+
+    def bu_bilgisayar(self, uyg):
+        """Bu bilgisayarda daha önce giren öğrenciler (sunucudan). Sunucu yoksa burada numarayla girmiş olanlar."""
+        try:
+            return self.gonder("bu-bilgisayar?" + urllib.parse.urlencode({"uygulama": uyg, "cihaz": ortak.bilgisayar_adi()}), zaman=5)
+        except OSError:
+            return {"ogrenciler": [{"ad": k.get("ad"), "robot": k.get("robot") or "afi", "kayit": k.get("kayit"), "son": 0} for k in self.tanidik.values() if k.get("kayit")],
+                    "cevrimdisi": True}
+
+    def ogrenci_giris(self, v):
+        """Numarayla giriş. Sunucu varsa ona sorulur; yoksa bu bilgisayarda daha önce girmiş öğrenci hatırlanır."""
+        try:
+            c = self.gonder("ogrenci-giris", v, zaman=5)
+            self._tanidik_yaz(c.get("kimlik"))
+            return c
+        except urllib.error.HTTPError as e:
+            try:
+                mesaj = (json.loads(e.read().decode("utf-8")) or {}).get("hata")
+            except (ValueError, OSError):
+                mesaj = None
+            raise Hata(e.code, mesaj or "Giriş yapılamadı.")
+        except OSError:
+            no = ortak.no_duzelt(v.get("no"))
+            kid = ortak.kayit_no(v)
+            for k in self.tanidik.values():
+                if (no and k.get("no") == no) or (kid and k.get("kayit") == kid):
+                    return {"ok": True, "kimlik": k, "cevrimdisi": True}
+            raise Hata(503, "Öğretmen bilgisayarına ulaşılamıyor. Bağlantı gelince numaranla girebilirsin.")
 
     def anlik(self, v):
         try:
@@ -342,19 +431,29 @@ class Istemci:
         except OSError:
             k = v.get("ogrenci") or {}
             with self.kilit:
-                self.kuyruk["anlik"][ortak.anahtar_yap(k.get("ad"), k.get("robot"))] = v
+                self.kuyruk["anlik"][ortak.ogrenci_anahtari(k)] = v
             return {"ok": True, "cevrimdisi": True}
 
     def kimlik(self, v):
         uyg = str(v.get("uygulama") or "afi-kod")
         e, y = v.get("eski") or {}, v.get("yeni") or {}
-        ea, ya = ortak.anahtar_yap(e.get("ad"), e.get("robot")), ortak.anahtar_yap(y.get("ad"), y.get("robot"))
-        eski = self.yerel_ilerleme(uyg, ea)
-        if eski:
-            self.yerel_ilerleme_yaz(uyg, ya, y, ilerleme_birlestir(self.yerel_ilerleme(uyg, ya), eski))
+        ea, ya = ortak.ogrenci_anahtari(e), ortak.ogrenci_anahtari(y)
+        eski = self.yerel_ilerleme(uyg, ea) if ea != ya else None       # numaralı öğrencide kimlik değişmez
+
+        def yerelde_tasi():
+            if eski:
+                self.yerel_ilerleme_yaz(uyg, ya, y, ilerleme_birlestir(self.yerel_ilerleme(uyg, ya), eski))
+            with self.kilit:          # sunucu yokken biriken olaylar da yeni kimliğe geçer
+                for o in self.kuyruk["olaylar"]:
+                    if o.get("_a") == ea:
+                        o["_a"] = ya
         try:
-            return self.gonder("kimlik", v)
+            c = self.gonder("kimlik", v)
+            if not (c or {}).get("dolu"):          # "dolu": bu ad ve robotla başka öğrenci var; kayıt taşınmaz
+                yerelde_tasi()
+            return c
         except OSError:
+            yerelde_tasi()
             with self.kilit:
                 self.kuyruk["kimlik"].append(v)
                 if eski:
@@ -366,6 +465,8 @@ class Istemci:
         return {"sistem": ortak.SISTEM, "rol": "istemci", "ad": "afi istemci", "platform": ortak.PLATFORM_SURUM,
                 "uygulamalar": [{k: u[k] for k in ("uygulama", "ad", "surum")} for u in self.paketler.uygulamalar()],
                 "sunucu_bagli": self.bagli(), "sunucu": self.sunucu, "sunucu_ad": (self.sunucu_bilgi or {}).get("ad"),
+                "giris_kipi": (self.sunucu_bilgi or {}).get("giris_kipi") or self.ayar.get("giris_kipi") or "serbest",
+                "ozellikler": (self.sunucu_bilgi or {}).get("ozellikler") or (["numara", "yardim"] if self.tanidik else []),
                 "cihaz": ortak.bilgisayar_adi(), "ip": self.lan_ip}
 
     # ------------------------------------------------------------ çalıştırma
@@ -412,7 +513,13 @@ class IstemciIsleyici(ortak.TemelIsleyici):
                 if a == "ilerleme" and yontem == "POST":
                     return self.json_gonder(app.ilerleme_yaz(self.json_govde()))
                 if a == "ilerleme":
-                    return self.json_gonder(app.ilerleme_oku(q.get("uygulama", "afi-kod"), q.get("ad", ""), q.get("robot", "afi")))
+                    return self.json_gonder(app.ilerleme_oku(q.get("uygulama", "afi-kod"), {"ad": q.get("ad", ""), "robot": q.get("robot", "afi"), "pid": q.get("pid", ""), "kayit": q.get("kayit")}))
+                if a == "ogrenci-giris" and yontem == "POST":
+                    return self.json_gonder(app.ogrenci_giris(self.json_govde()))
+                if a == "cihaz" and yontem == "POST":
+                    return self.json_gonder(app.cihaz(self.json_govde()))
+                if a == "bu-bilgisayar":
+                    return self.json_gonder(app.bu_bilgisayar(q.get("uygulama", "afi-kod")))
                 if a == "anlik" and yontem == "POST":
                     return self.json_gonder(app.anlik(self.json_govde()))
                 if a == "kimlik" and yontem == "POST":

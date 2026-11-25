@@ -18,9 +18,25 @@ Hem öğretmen hem öğrenci bilgisayarında aynı dosya çalıştırılır; kur
 ÖĞRENCİ BİLGİSAYARI
 1. Aynı kurulum dosyasını açın, "Öğrenci bilgisayarı (istemci)" seçin. Sunucu adresi boş kalabilir.
 2. Masaüstüne "AFİ KOD" simgesi gelir; program Windows açılışında arka planda başlar.
-   Ağ yokken de çalışır; sunucuyu kendisi bulur. Bulamazsa üstteki "Sınıf bağlantısı yok" etiketine
+   Ağ yokken de çalışır; sunucuyu kendisi bulur. Bulamazsa üstteki "Bağlantı yok" etiketine
    tıklayıp adresi yazın (ör. 192.168.1.20:8000).
 - Kurulumsuz: tarayıcıda http://ÖĞRETMEN-PC:8000 açılır.
+
+ÖĞRENCİ LİSTESİ VE NUMARALAR (afi sınıf 1.3)
+1. Panel > Öğrenciler: öğrencileri tek tek ya da Excel'den yapıştırarak (her satıra bir ad) ekleyin.
+   Her öğrenciye 4 haneli bir numara verilir. "Numara kartlarını yazdır" kesilip dağıtılacak kartlar basar.
+2. Öğrenci AFİ KOD'da numarasını yazıp Gir'e basar; hangi bilgisayara oturursa otursun kaldığı yerden devam eder.
+3. Adını kendisi yazarak girmiş öğrenciler "Numarasız" listesinde görünür: "Numara ver" ilerlemeyi koruyarak
+   numara verir; aynı kişi iki kez görünüyorsa "Birleştir" ile tek kayıt yapın.
+4. Liste tamamlanınca giriş biçimini "Yalnızca numarayla" yapın: kayıtlar hiç karışmaz.
+- Sınıf sekmesi: listedeki herkes görünür (hiç girmeyenler de). Yardım isteyen sarı, üst üste 3 kez hata alan
+  ya da 8 dakikadır aynı adımda kalan kırmızı işaretlenir. Karta tıklayınca zorlandığı adımlar, sık aldığı
+  hatalar, çalışma süresi ve geldiği günler görünür.
+- Rapor sekmesi: öğrenci raporu, en çok zorlanılan adımlar, gün gün katılım; "Yoklama" Excel çıktısı.
+- "Sesleri kapat": öğrenci bilgisayarlarında AFİ KOD seslerini ve sesli okumayı kapatır (öğrenci açamaz).
+- "Bilgisayarlar" menüsü: herkesin ekran düzenini sıfırla, misafir çalışmalarını temizle,
+  bilgisayarlardaki ad listesini temizle (kayıtlar sunucuda kalır).
+- Sunucu her gün kendiliğinden yedek alır: kayıt klasöründeki "yedek" klasörü (son 14 gün).
 
 TOPLU (SESSİZ) KURULUM
 Yönetici Komut İstemi'nde, kurulum dosyasının klasöründe tek satır:

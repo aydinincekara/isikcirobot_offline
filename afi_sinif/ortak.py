@@ -18,7 +18,7 @@ import urllib.request
 import zipfile
 from http.server import BaseHTTPRequestHandler
 
-PLATFORM_SURUM = "1.2.0"
+PLATFORM_SURUM = "1.3.0"
 SISTEM = "afi-sinif"
 VARSAYILAN_PORT = 8000
 ISTEMCI_PORT = 8100
@@ -101,7 +101,7 @@ def eski_kayitlari_tasi(hedef, adaylar, isaret):
 
 
 def veri_klasoru(rol):
-    """Kayıtların tutulduğu klasör. Öncelik: AFI_VERI ortam değişkeni > kurulumda seçilen klasör > varsayılan.
+    r"""Kayıtların tutulduğu klasör. Öncelik: AFI_VERI ortam değişkeni > kurulumda seçilen klasör > varsayılan.
     Kurulumla (varsayılan C:\afikod):  C:\afikod\kayitlar\sunucu   ve   C:\afikod\kayitlar\istemci\<Windows kullanıcısı>
     Kurulumsuz sunucu: programın yanındaki 'afi-sunucu-veri' (taşınabilir).
     Kurulumsuz istemci: %LOCALAPPDATA%\afi-sinif\veri."""
@@ -209,6 +209,31 @@ def anahtar_yap(ad, robot):
     """Öğrenci kimliği: takma ad + robot. Aynı adlı iki öğrenci farklı robot seçerse ayrı kişidir."""
     ad = " ".join(str(ad or "").translate(TR_KUCUK).lower().split())[:40]
     return ad + "|" + (str(robot or "afi")[:20])
+
+
+def kayit_no(ogr):
+    """Öğrencinin sınıf listesindeki kayıt numarası (sunucunun verdiği iç numara) ya da None."""
+    try:
+        n = int((ogr or {}).get("kayit") or 0)
+    except (TypeError, ValueError):
+        return None
+    return n if n > 0 else None
+
+
+def ogrenci_anahtari(ogr):
+    """Öğrencinin kayıt anahtarı.
+    Sınıf listesine kayıtlı öğrenci (numarası olan): "#<kayıt no>"  -> adı ya da robotu değişse de aynı kişi.
+    Listeye kayıtlı olmayan (adını kendisi yazan): ad + robot (eski yöntem)."""
+    n = kayit_no(ogr)
+    if n:
+        return "#%d" % n
+    return anahtar_yap((ogr or {}).get("ad"), (ogr or {}).get("robot"))
+
+
+def no_duzelt(no):
+    """Öğrenci numarası: yalnızca rakam, 2-8 hane. Geçersizse None."""
+    s = "".join(c for c in str(no or "") if c.isdigit())
+    return s if 2 <= len(s) <= 8 else None
 
 
 # ---------------------------------------------------------------- ağ

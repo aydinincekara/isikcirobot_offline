@@ -27,7 +27,7 @@ Yönetici Komut İstemi'nde: `afi-sinif-kurulum.exe /VERYSILENT /ALLUSERS /ROL=i
 ya da `/ROL=sunucu /PORT=8000 /AD="Bilgi Evi 1" [/VERI=klasör]`. Diğerleri: `/BASLANGIC=0|1 /MASAUSTU=0|1 /DUVAR=0|1 /ORTAK=0|1 /DIR=klasör`.
 
 ## Yeni AFİ KOD sürümünü yayınlamak
-1. isikcirobot_v1'de `python tools/set_version.py 2.4`, değişiklikleri gönderin.
+1. isikcirobot_v1'de `python tools/set_version.py <sürüm>` (ör. 2.5), değişiklikleri gönderin.
 2. Bu klasörde: `python tools/paketle.py ..\isikcirobot_v1 "Türkçe not" "English note"`
 3. `paketler/`, `version.json` ve `afi_sinif/paketler/` değişikliklerini gönderin. Sunucular "Güncellemeleri denetle" deyince yeni sürümü görür.
 
